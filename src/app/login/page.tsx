@@ -143,7 +143,7 @@ export default function LoginPage() {
       <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <Image src="/logo-church-assist.png" alt="Church Assist" width={2000} height={581} className="h-10 w-auto mx-auto mb-4" />
+            <Image src="/logo-church-assist.png" alt="Church Assist" width={2000} height={581} className="h-10 w-auto mx-auto mb-4" priority />
           </div>
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             {view === "reset-sent" ? (
@@ -216,7 +216,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <Image src="/logo-church-assist.png" alt="Church Assist" width={2000} height={581} className="h-10 w-auto" />
+            <Image src="/logo-church-assist.png" alt="Church Assist" width={2000} height={581} className="h-10 w-auto" priority />
           </div>
           <p className="text-slate-400">Sign in to your church management dashboard</p>
         </div>

@@ -14,6 +14,22 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+const placeholderKeys = [
+  "your-firebase-api-key",
+  "your-project.firebaseapp.com",
+  "your-project-id",
+  "your-measurement-id",
+];
+
+if (Object.values(firebaseConfig).some((value) => !value || placeholderKeys.some((placeholder) => value?.includes(placeholder)))) {
+  throw new Error(
+    "Firebase environment variables are not configured correctly. " +
+      "Verify NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, NEXT_PUBLIC_FIREBASE_PROJECT_ID, " +
+      "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET, NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, NEXT_PUBLIC_FIREBASE_APP_ID, " +
+      "and NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID in your environment settings."
+  );
+}
+
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize Firestore with persistent cache settings
