@@ -22,6 +22,8 @@ import {
   orderBy,
   limit,
   doc,
+  addDoc,
+  updateDoc,
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -47,16 +49,17 @@ const defaultHeadCountForm = {
 };
 
 export default function AttendancePage() {
-  const [, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [, setEditingRecord] = useState<AttendanceRecord | null>(null);
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
   const [openActionId, setOpenActionId] = useState<string | null>(null);
-  const [, setFormData] = useState(defaultHeadCountForm);
+  const [formData, setFormData] = useState(defaultHeadCountForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; itemId: string | null }>({
     isOpen: false,
     itemId: null,
@@ -113,6 +116,39 @@ export default function AttendancePage() {
     setFormData({ date: r.date, service: r.service, branch: r.branch, mode: r.mode, maleCount: r.maleCount, femaleCount: r.femaleCount, childrenCount: r.childrenCount, firstTimersCount: r.firstTimersCount, checkedInMemberIds: r.checkedInMemberIds || [], notes: r.notes });
     setIsModalOpen(true);
     setOpenActionId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        ...formData,
+        total: formData.maleCount + formData.femaleCount + formData.childrenCount,
+      };
+
+      if (editingRecord) {
+        await updateDoc(doc(db, "attendance", editingRecord.id), payload);
+        toast.success("Attendance record updated successfully.");
+      } else {
+        await addDoc(collection(db, "attendance"), {
+          ...payload,
+          createdAt: new Date(),
+        });
+        toast.success("Attendance record saved successfully.");
+      }
+
+      setIsModalOpen(false);
+      setEditingRecord(null);
+      setFormData(defaultHeadCountForm);
+      fetchRecords();
+    } catch (error) {
+      console.error("Error saving attendance record:", error);
+      toast.error("Failed to save attendance record.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalAttendance = records.reduce((sum, r) => sum + (r.total || 0), 0);
@@ -313,6 +349,85 @@ export default function AttendancePage() {
           </div>
         )}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50">
+          <div className="w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--brand-border)] px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--brand-navy)]">
+                  {editingRecord ? "Edit Attendance" : "Record Attendance"}
+                </h2>
+                <p className="text-sm text-[var(--brand-muted)]">
+                  {editingRecord ? "Adjust attendance numbers for this service." : "Add a new attendance summary for your church service."}
+                </p>
+              </div>
+              <button onClick={() => { setIsModalOpen(false); setEditingRecord(null); setFormData(defaultHeadCountForm); }} className="rounded-full p-2 text-[var(--brand-muted)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-navy)] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Date</span>
+                  <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Service</span>
+                  <input type="text" value={formData.service} onChange={(e) => setFormData({ ...formData, service: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="Sunday Morning" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Branch</span>
+                  <select value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    {BRANCHES.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+                  </select>
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Mode</span>
+                  <select value={formData.mode} onChange={(e) => setFormData({ ...formData, mode: e.target.value as AttendanceMode })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    <option value="headcount">Headcount</option>
+                    <option value="checkin">Check-in</option>
+                  </select>
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-4">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Male</span>
+                  <input type="number" min={0} value={formData.maleCount} onChange={(e) => setFormData({ ...formData, maleCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Female</span>
+                  <input type="number" min={0} value={formData.femaleCount} onChange={(e) => setFormData({ ...formData, femaleCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Children</span>
+                  <input type="number" min={0} value={formData.childrenCount} onChange={(e) => setFormData({ ...formData, childrenCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">First Timers</span>
+                  <input type="number" min={0} value={formData.firstTimersCount} onChange={(e) => setFormData({ ...formData, firstTimersCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+              </div>
+              <div>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Notes</span>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 resize-none" placeholder="Optional service notes" />
+                </label>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => { setIsModalOpen(false); setEditingRecord(null); setFormData(defaultHeadCountForm); }} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="rounded-2xl bg-[var(--brand-blue)] px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-blue-dark)] transition-all disabled:opacity-60">
+                  {isSubmitting ? "Saving..." : editingRecord ? "Update Record" : "Save Record"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}

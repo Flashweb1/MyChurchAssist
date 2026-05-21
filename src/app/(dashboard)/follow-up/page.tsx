@@ -23,6 +23,7 @@ import {
   orderBy,
   limit,
   doc,
+  addDoc,
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
@@ -46,16 +47,17 @@ const defaultFormData = {
 };
 
 export default function FollowUpPage() {
-  const [, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [tasks, setTasks] = useState<FollowUpTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [, setEditingTask] = useState<FollowUpTask | null>(null);
+  const [editingTask, setEditingTask] = useState<FollowUpTask | null>(null);
   const [openActionId, setOpenActionId] = useState<string | null>(null);
-  const [, setFormData] = useState(defaultFormData);
+  const [formData, setFormData] = useState(defaultFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; itemId: string | null }>({
     isOpen: false,
     itemId: null,
@@ -111,6 +113,36 @@ export default function FollowUpPage() {
     setFormData({ personName: t.personName, personPhone: t.personPhone, type: t.type, assignedTo: t.assignedTo, dueDate: t.dueDate, status: t.status, notes: t.notes });
     setIsModalOpen(true);
     setOpenActionId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (editingTask) {
+        await updateDoc(doc(db, "followups", editingTask.id), {
+          ...formData,
+        });
+        toast.success("Follow-up task updated successfully.");
+      } else {
+        await addDoc(collection(db, "followups"), {
+          ...formData,
+          createdAt: new Date(),
+        });
+        toast.success("Follow-up task created successfully.");
+      }
+
+      setIsModalOpen(false);
+      setEditingTask(null);
+      setFormData(defaultFormData);
+      fetchTasks();
+    } catch (error) {
+      console.error("Error saving follow-up task:", error);
+      toast.error("Failed to save follow-up task.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const stats = [
@@ -321,6 +353,76 @@ export default function FollowUpPage() {
           </div>
         )}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50">
+          <div className="w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--brand-border)] px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--brand-navy)]">
+                  {editingTask ? "Edit Follow-Up Task" : "Add Follow-Up Task"}
+                </h2>
+                <p className="text-sm text-[var(--brand-muted)]">
+                  {editingTask ? "Update the follow-up task details." : "Create a new task for follow-up actions."}
+                </p>
+              </div>
+              <button onClick={() => { setIsModalOpen(false); setEditingTask(null); setFormData(defaultFormData); }} className="rounded-full p-2 text-[var(--brand-muted)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-navy)] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Person Name</span>
+                  <input type="text" value={formData.personName} onChange={(e) => setFormData({ ...formData, personName: e.target.value })} required className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. Samuel Okonkwo" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Contact Phone</span>
+                  <input type="tel" value={formData.personPhone} onChange={(e) => setFormData({ ...formData, personPhone: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. +2348123456789" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Task Type</span>
+                  <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value as FollowUpTask['type'] })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    {TASK_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Assigned To</span>
+                  <input type="text" value={formData.assignedTo} onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. Pastor Jane" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Due Date</span>
+                  <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Status</span>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as FollowUpTask['status'] })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </label>
+              </div>
+              <div>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Notes</span>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 resize-none" placeholder="Add task context or follow-up details" />
+                </label>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button type="button" onClick={() => { setIsModalOpen(false); setEditingTask(null); setFormData(defaultFormData); }} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="rounded-2xl bg-[var(--brand-blue)] px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-blue-dark)] transition-all disabled:opacity-60">
+                  {isSubmitting ? "Saving..." : editingTask ? "Update Task" : "Create Task"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}

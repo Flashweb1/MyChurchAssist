@@ -20,6 +20,8 @@ import {
   orderBy,
   limit,
   doc,
+  addDoc,
+  updateDoc,
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -44,15 +46,16 @@ const defaultFormData = {
 };
 
 export default function NewcomersPage() {
-  const [, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newcomers, setNewcomers] = useState<Newcomer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [, setEditingNewcomer] = useState<Newcomer | null>(null);
+  const [editingNewcomer, setEditingNewcomer] = useState<Newcomer | null>(null);
   const [openActionId, setOpenActionId] = useState<string | null>(null);
-  const [, setFormData] = useState(defaultFormData);
+  const [formData, setFormData] = useState(defaultFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; itemId: string | null }>({
     isOpen: false,
     itemId: null,
@@ -97,6 +100,36 @@ export default function NewcomersPage() {
     setFormData({ fullName: n.fullName, phone: n.phone, email: n.email, visitDate: n.visitDate, serviceAttended: n.serviceAttended, invitedBy: n.invitedBy, bornAgain: n.bornAgain, wantsFollowUp: n.wantsFollowUp, notes: n.notes, status: n.status });
     setIsModalOpen(true);
     setOpenActionId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (editingNewcomer) {
+        await updateDoc(doc(db, "newcomers", editingNewcomer.id), {
+          ...formData,
+        });
+        toast.success("Newcomer updated successfully.");
+      } else {
+        await addDoc(collection(db, "newcomers"), {
+          ...formData,
+          createdAt: new Date(),
+        });
+        toast.success("Newcomer logged successfully.");
+      }
+
+      setIsModalOpen(false);
+      setEditingNewcomer(null);
+      setFormData(defaultFormData);
+      fetchNewcomers();
+    } catch (error) {
+      console.error("Error saving newcomer:", error);
+      toast.error("Failed to save newcomer.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const statusColor = (status: string) => {
@@ -306,6 +339,90 @@ export default function NewcomersPage() {
           </div>
         )}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50">
+          <div className="w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--brand-border)] px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--brand-navy)]">
+                  {editingNewcomer ? "Edit Newcomer" : "Log Newcomer"}
+                </h2>
+                <p className="text-sm text-[var(--brand-muted)]">
+                  {editingNewcomer ? "Update visitor details." : "Capture this newcomer’s details and follow-up needs."}
+                </p>
+              </div>
+              <button onClick={() => { setIsModalOpen(false); setEditingNewcomer(null); setFormData(defaultFormData); }} className="rounded-full p-2 text-[var(--brand-muted)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-navy)] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Full Name</span>
+                  <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. Jane Doe" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Contact Phone</span>
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. +1234567890" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Email Address</span>
+                  <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="jane@example.com" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Visit Date</span>
+                  <input type="date" value={formData.visitDate} onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Service Attended</span>
+                  <input type="text" value={formData.serviceAttended} onChange={(e) => setFormData({ ...formData, serviceAttended: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="Sunday Morning" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Invited By</span>
+                  <input type="text" value={formData.invitedBy} onChange={(e) => setFormData({ ...formData, invitedBy: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. Pastor John" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={formData.bornAgain} onChange={(e) => setFormData({ ...formData, bornAgain: e.target.checked })} className="h-4 w-4 rounded border-[var(--brand-border)] text-[var(--brand-blue)] focus:ring-[var(--brand-blue)]/50" />
+                  <span>Born again</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={formData.wantsFollowUp} onChange={(e) => setFormData({ ...formData, wantsFollowUp: e.target.checked })} className="h-4 w-4 rounded border-[var(--brand-border)] text-[var(--brand-blue)] focus:ring-[var(--brand-blue)]/50" />
+                  <span>Wants follow-up</span>
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Status</span>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as Newcomer["status"] })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    {['New', 'Followed Up', 'Member', 'Lost Contact'].map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-2 text-sm col-span-2">
+                  <span className="font-medium text-slate-700">Notes</span>
+                  <textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 resize-none" placeholder="Add any notes or follow-up details" />
+                </label>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => { setIsModalOpen(false); setEditingNewcomer(null); setFormData(defaultFormData); }} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="rounded-2xl bg-[var(--brand-blue)] px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-blue-dark)] transition-all disabled:opacity-60">
+                  {isSubmitting ? "Saving..." : editingNewcomer ? "Update Newcomer" : "Log Newcomer"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}

@@ -27,6 +27,7 @@ import {
   doc,
   deleteDoc,
 } from "firebase/firestore";
+import { addDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Member } from "@/lib/types";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -46,17 +47,18 @@ const defaultFormData = {
 
 export default function MembersPage() {
   const searchParams = useSearchParams();
-  const [, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
   const [branchFilter, setBranchFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [, setEditingMember] = useState<Member | null>(null);
-  const [, setViewingMember] = useState<Member | null>(null);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [openActionId, setOpenActionId] = useState<string | null>(null);
-  const [, setFormData] = useState(defaultFormData);
+  const [formData, setFormData] = useState(defaultFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; itemId: string | null }>({
     isOpen: false,
     itemId: null,
@@ -123,6 +125,46 @@ export default function MembersPage() {
     });
     setIsModalOpen(true);
     setOpenActionId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (editingMember) {
+        await updateDoc(doc(db, "members", editingMember.id), {
+          ...formData,
+        });
+        toast.success("Member updated successfully.");
+      } else {
+        await addDoc(collection(db, "members"), {
+          ...formData,
+          createdAt: new Date(),
+        });
+        toast.success("Member added successfully.");
+      }
+
+      setIsModalOpen(false);
+      setEditingMember(null);
+      setFormData(defaultFormData);
+      fetchMembers();
+    } catch (error) {
+      console.error("Error saving member:", error);
+      toast.error("Failed to save member.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingMember(null);
+    setFormData(defaultFormData);
+  };
+
+  const handleCloseViewer = () => {
+    setViewingMember(null);
   };
 
   const handleDelete = async (memberId: string) => {
@@ -415,6 +457,126 @@ export default function MembersPage() {
           </div>
         )}
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50">
+          <div className="w-full max-w-2xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--brand-border)] px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--brand-navy)]">
+                  {editingMember ? "Edit Member" : "Add Member"}
+                </h2>
+                <p className="text-sm text-[var(--brand-muted)]">
+                  {editingMember ? "Update your member’s profile." : "Create a new congregation member record."}
+                </p>
+              </div>
+              <button onClick={handleCloseModal} className="rounded-full p-2 text-[var(--brand-muted)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-navy)] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Full Name</span>
+                  <input type="text" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. Richard Nwosu" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Email</span>
+                  <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="member@example.com" />
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Phone</span>
+                  <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. +2348123456789" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Branch</span>
+                  <select value={formData.branch} onChange={(e) => setFormData({ ...formData, branch: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    {BRANCHES.map((branch) => (
+                      <option key={branch} value={branch}>{branch}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Department</span>
+                  <input type="text" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" placeholder="e.g. Worship" />
+                </label>
+                <label className="space-y-2 text-sm">
+                  <span className="font-medium text-slate-700">Status</span>
+                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value as "Active" | "Inactive" })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </label>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={handleCloseModal} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmitting} className="rounded-2xl bg-[var(--brand-blue)] px-5 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-blue-dark)] transition-all disabled:opacity-60">
+                  {isSubmitting ? "Saving..." : editingMember ? "Update Member" : "Add Member"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {viewingMember && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50">
+          <div className="w-full max-w-xl overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--brand-border)] px-6 py-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--brand-navy)]">Member Details</h2>
+                <p className="text-sm text-[var(--brand-muted)]">Review member profile information.</p>
+              </div>
+              <button onClick={handleCloseViewer} className="rounded-full p-2 text-[var(--brand-muted)] hover:bg-[var(--brand-bg)] hover:text-[var(--brand-navy)] transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4 p-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">Full Name</p>
+                  <p className="mt-1 text-sm text-slate-900">{viewingMember.fullName}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">Email</p>
+                  <p className="mt-1 text-sm text-slate-900">{viewingMember.email || "—"}</p>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">Phone</p>
+                  <p className="mt-1 text-sm text-slate-900">{viewingMember.phone || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">Branch</p>
+                  <p className="mt-1 text-sm text-slate-900">{viewingMember.branch}</p>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">Department</p>
+                  <p className="mt-1 text-sm text-slate-900">{viewingMember.department}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--brand-muted)]">Status</p>
+                  <p className="mt-1 text-sm text-slate-900">{viewingMember.status}</p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button onClick={handleCloseViewer} className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         isOpen={deleteConfirm.isOpen}
