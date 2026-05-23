@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ArrowRight } from "lucide-react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const navLinks = [
   { href: "/features", label: "Features" },
@@ -44,6 +45,7 @@ export default function PublicNavbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
+            <LanguageSwitcher />
             <Link
               href="/login"
               className="text-sm font-semibold text-slate-700 hover:text-[var(--brand-blue)] px-4 py-2 rounded-xl transition-all"

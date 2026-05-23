@@ -126,11 +126,18 @@ export default function FinancesPage() {
           <h1 className="text-2xl font-bold text-[var(--brand-navy)]">Finances</h1>
           <p className="text-[var(--brand-muted)] mt-1 text-sm">Track income, expenses, and manage church finances.</p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--brand-blue)] text-white rounded-xl hover:bg-[var(--brand-blue-dark)] transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 focus-ring">
-          <Plus className="w-4 h-4" />
-          <span className="text-sm">Add Transaction</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => toast.info("Paystack Integration Placeholder: Please configure your API Keys in settings to process real transactions.", { duration: 5000 })}
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 focus-ring">
+            <DollarSign className="w-4 h-4" />
+            <span className="text-sm">Online Giving (Paystack)</span>
+          </button>
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[var(--brand-blue)] text-white rounded-xl hover:bg-[var(--brand-blue-dark)] transition-all duration-200 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 focus-ring">
+            <Plus className="w-4 h-4" />
+            <span className="text-sm">Add Transaction</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

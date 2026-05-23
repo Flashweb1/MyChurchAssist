@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { seedDemoData } from "@/lib/demo-seed";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -17,14 +18,26 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
-  const { user, signup, loginWithGoogle, loading: authLoading } = useAuth();
+  const { user, login, signup, loginWithGoogle, loading: authLoading } = useAuth();
+  const isDemoRef = useRef(false);
+  const demoSeededRef = useRef(false);
 
   // Automatically redirect to onboarding (or dashboard if already set up).
   // The onboarding layout handles the redirect to dashboard if settings exist.
   useEffect(() => {
-    if (user && !authLoading) {
-      router.push("/onboarding");
+    if (!user || authLoading) return;
+
+    if (isDemoRef.current && !demoSeededRef.current) {
+      // Demo flow: seed data then go to dashboard
+      demoSeededRef.current = true;
+      seedDemoData(user.displayName || "Demo Admin")
+        .catch((err) => console.error("Demo seed error:", err))
+        .then(() => new Promise((r) => setTimeout(r, 800))) // Wait for Firestore consistency
+        .finally(() => router.push("/dashboard"));
+      return;
     }
+
+    router.push("/onboarding");
   }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,6 +91,30 @@ export default function SignupPage() {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    setError("");
+    isDemoRef.current = true;
+    demoSeededRef.current = false;
+
+    const randomId = Math.floor(Math.random() * 100000);
+    const demoEmail = `demo_${randomId}@churchassist.app`;
+    const demoPass = "demo1234";
+
+    try {
+      await signup(demoEmail, demoPass);
+    } catch {
+      try {
+        await login("demo@churchassist.app", "demo1234");
+      } catch {
+        setError("Demo login failed. Please try again.");
+        isDemoRef.current = false;
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--brand-navy)] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -121,7 +158,16 @@ export default function SignupPage() {
                 />
               </svg>
             )}
-            {googleLoading ? "Signing in..." : "Continue with Google"}
+          </button>
+
+          {/* Demo Sign In Button */}
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            disabled={loading || googleLoading}
+            className="w-full flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl font-medium transition-colors mb-6 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Try Demo Account"}
           </button>
 
           <div className="relative mb-6">

@@ -1,38 +1,38 @@
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
-import { Users, CalendarCheck, ClipboardList, Building2, BarChart3, UserPlus, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { Users, CalendarCheck, ClipboardList, Building2, BarChart3, UserPlus, ArrowRight, ShieldCheck, Sparkles, Brain, Bot, Send } from "lucide-react";
 import Link from "next/link";
 
 const features = [
   {
     icon: Users,
-    title: "Member Management",
-    description: "Track every member with detailed profiles, departments, and status. Add, edit, and organize your congregation effortlessly.",
+    title: "AI Member Analytics",
+    description: "Track member profiles and let AI analyze engagement levels, automatically flagging members who might need prayer or care contact.",
   },
   {
-    icon: UserPlus,
-    title: "Newcomer Tracking",
-    description: "Never lose track of first-time visitors. Log visits, track follow-ups automatically, and turn visitors into loyal attendees.",
+    icon: Sparkles,
+    title: "AI Newcomer Outreach",
+    description: "Personalized welcome texts and emails are auto-drafted by AI using information provided during check-in, ready to approve.",
   },
   {
     icon: CalendarCheck,
-    title: "Attendance Records",
-    description: "Record service attendance by branch, gender, and age group. Visualize trends with powerful charts that are easy to act on.",
+    title: "Smart Attendance scan",
+    description: "Log attendance in seconds via QR code scans, mobile-friendly headcounts, or sheet scans. Let AI project attendance trends.",
   },
   {
     icon: ClipboardList,
-    title: "Follow-Up System",
-    description: "Assign follow-up tasks for newcomers, prayer requests, and outreach. Keep every conversation moving forward.",
+    title: "Automated Follow-up Workflows",
+    description: "Set trigger actions (e.g., newcomer checks in or member absent 3 weeks) and auto-assign task checklists to specific leaders.",
   },
   {
     icon: Building2,
-    title: "Department Management",
-    description: "Organize church teams, assign leaders, and view department performance from a single unified dashboard.",
+    title: "Department Coordination",
+    description: "Organize ministries, departments, and volunteer teams. Let the platform automate schedule notifications and reminder tasks.",
   },
   {
     icon: BarChart3,
-    title: "Reports & Analytics",
-    description: "View growth, attendance, giving, and engagement data in one place so you can make smarter ministry decisions.",
+    title: "Intelligent Finance Insights",
+    description: "Track offerings, tithes, and receipts in one dashboard. AI forecasts giving patterns and automatically compiles reports.",
   },
 ];
 
@@ -44,15 +44,18 @@ export default function FeaturesPage() {
       <main className="pt-32 pb-24">
         <section className="px-4 sm:px-6 lg:px-8 mb-16">
           <div className="max-w-5xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--brand-blue)]/10 px-5 py-2 text-sm font-semibold text-[var(--brand-blue)] mb-6">
-              <Sparkles className="w-4 h-4" />
-              Built for modern ministries
+            <div className="inline-flex items-center gap-2 bg-[#DFF7F4] border border-[#0DBA8B]/30 px-4.5 py-1.5 rounded-full text-[11px] font-bold shadow-sm hover:shadow-md transition-all cursor-default mb-6">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0DBA8B] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0DBA8B]"></span>
+              </span>
+              <span className="text-[#082B6F] tracking-wide uppercase">AI-Powered Ministry Management Platform</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight mb-6">
-              Every tool your church needs to stay organized, engaged, and growing
+              Every automation tool your church needs to grow and care
             </h1>
             <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              Church Assist brings attendance, giving, member care, communication, and reporting together in one premium platform.
+              Church Assist replaces manual workloads with a single, intelligent system built for attendance tracking, member follow-ups, giving, and communication.
             </p>
           </div>
         </section>
@@ -65,7 +68,7 @@ export default function FeaturesPage() {
                   <feature.icon className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-3">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
+                <p className="text-slate-600 leading-relaxed text-sm">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -76,29 +79,29 @@ export default function FeaturesPage() {
             <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] items-center">
               <div>
                 <p className="text-sm uppercase tracking-[0.3em] text-slate-500 mb-4">How it works</p>
-                <h2 className="text-4xl font-bold text-slate-900 mb-6">A beautifully simple workflow for daily church operations</h2>
-                <p className="text-lg text-slate-600 leading-relaxed max-w-2xl">From new member intake to follow-up, attendance, and finance, every part of your church lifecycle is built to move quickly and feel modern.</p>
+                <h2 className="text-4xl font-bold text-slate-900 mb-6">Autonomous systems working behind the scenes</h2>
+                <p className="text-lg text-slate-600 leading-relaxed max-w-2xl">From new member intake to follow-up, attendance tracking, and reporting, Church Assist coordinates tasks automatically.</p>
 
                 <div className="mt-10 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                     <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-blue)] font-bold mb-3">Step 1</p>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Capture attendance instantly</h3>
-                    <p className="text-slate-600">Quick check-in screens and mobile-friendly logging make every service painless to track.</p>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Quick QR & headcount scans</h3>
+                    <p className="text-slate-600 text-sm">Scan QR codes or enter headcounts. AI updates dashboards and logs newcomer info instantly.</p>
                   </div>
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                     <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-blue)] font-bold mb-3">Step 2</p>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Follow up with confidence</h3>
-                    <p className="text-slate-600">Automated follow-up workflows keep every visitor engaged and supported.</p>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Automated AI follow-ups</h3>
+                    <p className="text-slate-600 text-sm">AI automatically drafts personalized follow-up emails and WhatsApp messages for your care team to approve.</p>
                   </div>
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                     <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-blue)] font-bold mb-3">Step 3</p>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Monitor growth with data</h3>
-                    <p className="text-slate-600">Actionable reporting surfaces trends and helps you lead smarter ministry decisions.</p>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Intelligent care alerts</h3>
+                    <p className="text-slate-600 text-sm">Tracks attendance and flags when a member misses consecutive services, notifying the pastor to check in.</p>
                   </div>
                   <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
                     <p className="text-sm uppercase tracking-[0.24em] text-[var(--brand-blue)] font-bold mb-3">Step 4</p>
-                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Manage teams with clarity</h3>
-                    <p className="text-slate-600">Keep volunteers, departments, and ministry leaders aligned in one structured system.</p>
+                    <h3 className="text-xl font-semibold text-slate-900 mb-2">Hands-off reporting</h3>
+                    <p className="text-slate-600 text-sm">Offering trends, attendance rates, and team spreadsheets compile automatically in the background.</p>
                   </div>
                 </div>
               </div>
@@ -107,38 +110,46 @@ export default function FeaturesPage() {
                 <div className="rounded-[1.75rem] bg-white p-8 shadow-xl">
                   <div className="flex items-center justify-between gap-4 mb-8">
                     <div>
-                      <p className="text-sm uppercase tracking-[0.25em] text-slate-500">Live ministry snapshot</p>
-                      <h3 className="mt-4 text-3xl font-bold text-slate-900">Fast daily visibility</h3>
+                      <p className="text-xs uppercase tracking-[0.25em] text-slate-500 font-semibold">Live ministry snapshot</p>
+                      <h3 className="mt-2 text-2xl font-bold text-slate-900">Church Assist AI active</h3>
                     </div>
-                    <div className="rounded-3xl bg-[var(--brand-blue)]/10 px-4 py-2 text-sm text-[var(--brand-blue)]">Auto updates</div>
+                    <div className="rounded-3xl bg-[var(--brand-blue)]/15 border border-[var(--brand-blue)]/20 px-3 py-1 text-xs text-[var(--brand-blue)] font-bold">Auto pilot</div>
                   </div>
-                  <div className="rounded-3xl bg-slate-100 p-5 mb-4">
-                    <div className="flex items-center justify-between text-sm text-slate-500 mb-3">
-                      <span>Attendance</span>
-                      <span className="font-semibold text-slate-900">82%</span>
+                  
+                  {/* Attendance insight */}
+                  <div className="rounded-2xl bg-slate-50 p-4 mb-4 border border-slate-200/60">
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                      <span className="font-semibold">Attendance projection</span>
+                      <span className="font-bold text-slate-900">82%</span>
                     </div>
-                    <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden mb-2">
                       <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-green)]" />
                     </div>
+                    <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3" /> AI projection: Stable growth
+                    </p>
                   </div>
-                  <div className="rounded-3xl bg-slate-100 p-5 mb-4">
-                    <div className="flex items-center justify-between text-sm text-slate-500 mb-3">
-                      <span>Newcomers</span>
-                      <span className="font-semibold text-slate-900">24 active</span>
+
+                  {/* Newcomers auto messages */}
+                  <div className="rounded-2xl bg-slate-50 p-4 mb-4 border border-slate-200/60">
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
+                      <span className="font-semibold">Newcomer follow-ups</span>
+                      <span className="font-bold text-slate-900">24 active</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-center text-xs text-slate-500">
-                      <span className="rounded-2xl bg-white py-2">Today</span>
-                      <span className="rounded-2xl bg-white py-2">This week</span>
-                      <span className="rounded-2xl bg-white py-2">Pending</span>
+                    <div className="grid grid-cols-2 gap-2 text-center text-[10px] text-slate-500 mb-2">
+                      <span className="rounded-xl bg-white border border-slate-200 py-1.5 font-medium">18 Sent automatically</span>
+                      <span className="rounded-xl bg-indigo-50 border border-indigo-100 py-1.5 text-[var(--brand-blue)] font-semibold">6 Awaiting review</span>
                     </div>
                   </div>
-                  <div className="rounded-3xl bg-slate-100 p-5">
-                    <div className="flex items-center justify-between text-sm text-slate-500 mb-3">
-                      <span>Giving</span>
-                      <span className="font-semibold text-slate-900">₦2.4M</span>
+
+                  {/* Financial projections */}
+                  <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200/60">
+                    <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+                      <span className="font-semibold">Weekly offering</span>
+                      <span className="font-bold text-slate-900">₦2.4M</span>
                     </div>
-                    <div className="rounded-3xl bg-slate-200 p-4 text-sm text-slate-700">
-                      +8% compared to last week
+                    <div className="text-[10px] text-slate-600 leading-relaxed">
+                      AI Projected giving: <span className="text-emerald-600 font-bold">+12% trend next Sunday</span>
                     </div>
                   </div>
                 </div>
@@ -149,21 +160,21 @@ export default function FeaturesPage() {
 
         <section className="px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto text-center">
-            <p className="text-sm uppercase tracking-[0.3em] text-[var(--brand-blue)] mb-4">Start with a beautiful system</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[var(--brand-blue)] mb-4">Start with an intelligent system</p>
             <h2 className="text-4xl font-bold text-slate-900 mb-6">Designed to feel premium for every member of your team</h2>
-            <p className="text-lg text-slate-600 leading-relaxed mx-auto max-w-3xl mb-12">A modern interface, thoughtful workflows, and fast access to the ministry data that matters most.</p>
+            <p className="text-lg text-slate-600 leading-relaxed mx-auto max-w-3xl mb-12">An elegant interface, automated workflows, and fast access to the ministry data that matters most.</p>
             <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">Fast adoption</h3>
-                <p className="text-slate-600">A clean interface that leaders and volunteers can use without training.</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3">Zero training needed</h3>
+                <p className="text-slate-600 text-sm">Volunteers and leaders can use the automated check-ins and lists instantly without overhead.</p>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">Built for churches</h3>
-                <p className="text-slate-600">Features shaped around real ministry workflows, not generic CRM patterns.</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3">AI assistant integration</h3>
+                <p className="text-slate-600 text-sm">Automations shape around real ministry lifecycle workflows, not generic sales CRM patterns.</p>
               </div>
               <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">Trusted reliability</h3>
-                <p className="text-slate-600">Secure cloud storage and a platform that scales with your congregation.</p>
+                <h3 className="text-xl font-semibold text-slate-900 mb-3">Enterprise reliability</h3>
+                <p className="text-slate-600 text-sm">Encrypted server databases keep your congregation, attendance, and giving logs secure.</p>
               </div>
             </div>
           </div>

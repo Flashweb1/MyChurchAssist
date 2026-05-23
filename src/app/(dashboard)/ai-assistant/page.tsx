@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { Send, Sparkles, User, Bot, Copy, Check, ChevronRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const PROMPT_SHORTCUTS = [
   { label: "Draft Newsletter", prompt: "Draft a warm, engaging weekly church newsletter for this Sunday. Include a welcome message, scripture of the week, upcoming events, and a closing prayer." },
@@ -64,18 +66,6 @@ export default function AIAssistantPage() {
     setTimeout(() => setCopiedIdx(null), 2000);
   };
 
-  const formatText = (text: string) => {
-    const escaped = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-    return escaped
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\n/g, "<br/>");
-  };
-
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] max-w-4xl mx-auto gap-4">
       {/* Header */}
@@ -126,9 +116,12 @@ export default function AIAssistantPage() {
                 : "bg-white border border-[var(--brand-border)] text-slate-700 rounded-bl-md shadow-sm"
             }`}>
               <div
-                className="text-sm leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: formatText(msg.content) }}
-              />
+                className="text-sm leading-relaxed prose prose-sm max-w-none prose-slate"
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.content}
+                </ReactMarkdown>
+              </div>
               {msg.role === "assistant" && (
                 <div className="flex items-center gap-2 mt-3 pt-2 border-t border-[var(--brand-border-light)]">
                   <button

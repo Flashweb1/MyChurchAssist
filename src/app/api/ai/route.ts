@@ -10,16 +10,11 @@ interface ModelConfig {
 }
 
 function buildMessages(prompt: string, messages?: { role: string; content: string }[]): { role: string; content: string }[] {
-  const out: { role: string; content: string }[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-  ];
+  const out: { role: string; content: string }[] = [{ role: "system", content: SYSTEM_PROMPT }];
   if (messages && Array.isArray(messages)) {
     for (const m of messages) {
       if (m.role === "system") continue;
-      out.push({
-        role: m.role === "assistant" ? "assistant" : "user",
-        content: m.content,
-      });
+      out.push({ role: m.role === "assistant" ? "assistant" : "user", content: m.content });
     }
   }
   out.push({ role: "user", content: prompt });
@@ -30,17 +25,8 @@ async function tryModel(config: ModelConfig, messages: { role: string; content: 
   try {
     const res = await fetch(config.url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...config.headers,
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages,
-        max_tokens: 4096,
-        temperature: 0.7,
-        top_p: 0.95,
-      }),
+      headers: { "Content-Type": "application/json", ...config.headers },
+      body: JSON.stringify({ model: config.model, messages, max_tokens: 4096, temperature: 0.7, top_p: 0.95 }),
     });
 
     if (!res.ok) {
@@ -65,62 +51,61 @@ export async function POST(req: Request) {
     }
 
     const chatMessages = buildMessages(prompt, messages);
+    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    const openCodeApiKey = process.env.OPENCODE_API_KEY;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-    // Tier 1: OpenRouter — Google Gemma 4 26B (free, best for writing)
-    const gemmaResult = await tryModel({
-      name: "Gemma 4",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      model: "google/gemma-4-26b-a4b-it:free",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "Church Assist",
-      },
-    }, chatMessages);
-    if (gemmaResult.ok) return NextResponse.json({ result: gemmaResult.text });
+    const headersBase: Record<string, string> = { "X-Title": "Church Assist" };
+    if (appUrl) {
+      headersBase["HTTP-Referer"] = appUrl;
+    }
 
-    // Tier 2: OpenRouter — NVIDIA Nemotron 120B (free)
-    const nemotronResult = await tryModel({
-      name: "Nemotron",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      model: "nvidia/nemotron-3-super-120b-a12b:free",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "Church Assist",
-      },
-    }, chatMessages);
-    if (nemotronResult.ok) return NextResponse.json({ result: nemotronResult.text });
+    const providers: ModelConfig[] = [];
 
-    // Tier 3: OpenRouter — Arcee Trinity (free)
-    const trinityResult = await tryModel({
-      name: "Trinity",
-      url: "https://openrouter.ai/api/v1/chat/completions",
-      model: "arcee-ai/trinity-large-thinking:free",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "Church Assist",
-      },
-    }, chatMessages);
-    if (trinityResult.ok) return NextResponse.json({ result: trinityResult.text });
+    if (openRouterApiKey) {
+      providers.push(
+        {
+          name: "Gemma 4",
+          url: "https://openrouter.ai/api/v1/chat/completions",
+          model: "google/gemma-4-26b-a4b-it:free",
+          headers: { Authorization: `Bearer ${openRouterApiKey}`, ...headersBase },
+        },
+        {
+          name: "Nemotron",
+          url: "https://openrouter.ai/api/v1/chat/completions",
+          model: "nvidia/nemotron-3-super-120b-a12b:free",
+          headers: { Authorization: `Bearer ${openRouterApiKey}`, ...headersBase },
+        },
+        {
+          name: "Trinity",
+          url: "https://openrouter.ai/api/v1/chat/completions",
+          model: "arcee-ai/trinity-large-thinking:free",
+          headers: { Authorization: `Bearer ${openRouterApiKey}`, ...headersBase },
+        }
+      );
+    }
 
-    // Tier 4: OpenCode Zen — big-pickle (free, different provider)
-    const zenResult = await tryModel({
-      name: "Big Pickle",
-      url: "https://opencode.ai/zen/v1/chat/completions",
-      model: "big-pickle",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENCODE_API_KEY}`,
-      },
-    }, chatMessages);
-    if (zenResult.ok) return NextResponse.json({ result: zenResult.text });
+    if (openCodeApiKey) {
+      providers.push({
+        name: "Big Pickle",
+        url: "https://opencode.ai/zen/v1/chat/completions",
+        model: "big-pickle",
+        headers: { Authorization: `Bearer ${openCodeApiKey}` },
+      });
+    }
 
-    // All tiers failed
-    return NextResponse.json(
-      { error: zenResult.error || "All AI services are unavailable. Please try again later." },
-      { status: 503 }
-    );
+    if (!providers.length) {
+      return NextResponse.json({ error: "AI provider credentials are not configured." }, { status: 503 });
+    }
+
+    let lastError: string | undefined;
+    for (const provider of providers) {
+      const result = await tryModel(provider, chatMessages);
+      if (result.ok) return NextResponse.json({ result: result.text });
+      lastError = result.error;
+    }
+
+    return NextResponse.json({ error: lastError || "All AI services are unavailable. Please try again later." }, { status: 503 });
   } catch (error: unknown) {
     console.error("AI API Error:", error);
     const message = error instanceof Error ? error.message : "Something went wrong";

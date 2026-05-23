@@ -61,8 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
+        document.cookie = "session=active; path=/; max-age=86400; SameSite=Lax";
         await fetchProfile(user.uid);
       } else {
+        document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         setUserProfile(null);
         setChurchId(null);
       }

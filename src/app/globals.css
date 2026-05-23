@@ -215,6 +215,54 @@ body {
   100% { stroke-dashoffset: 0; }
 }
 
+@keyframes aurora-drift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -40px) scale(1.1) rotate(120deg);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9) rotate(240deg);
+  }
+}
+
+@keyframes text-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float-y-slow {
+  0%, 100% { transform: translateY(0px) rotate(0.5deg); }
+  50% { transform: translateY(-10px) rotate(-0.5deg); }
+}
+
+@keyframes float-y-medium {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-7px) rotate(1deg); }
+}
+
+@keyframes float-y-fast {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes pulse-glow-ai {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(10, 102, 255, 0.15), 0 0 30px rgba(124, 58, 237, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(10, 102, 255, 0.35), 0 0 45px rgba(124, 58, 237, 0.15);
+  }
+}
+
+@keyframes draw-path {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* Utility Classes */
 .fade-in-up {
   animation: fadeInUp 0.5s ease-out both;
@@ -222,6 +270,37 @@ body {
 
 .fade-in {
   animation: fadeIn 0.3s ease-out both;
+}
+
+.animate-aurora-drift {
+  animation: aurora-drift 20s infinite alternate ease-in-out;
+}
+
+.animate-text-gradient {
+  background-size: 200% auto;
+  animation: text-gradient-shift 6s linear infinite;
+}
+
+.animate-float-slow {
+  animation: float-y-slow 6s infinite ease-in-out;
+}
+
+.animate-float-medium {
+  animation: float-y-medium 4.5s infinite ease-in-out;
+}
+
+.animate-float-fast {
+  animation: float-y-fast 3s infinite ease-in-out;
+}
+
+.animate-pulse-glow-ai {
+  animation: pulse-glow-ai 3s infinite ease-in-out;
+}
+
+.animate-draw-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: draw-path 2s ease-out forwards;
 }
 
 .slide-in-right {

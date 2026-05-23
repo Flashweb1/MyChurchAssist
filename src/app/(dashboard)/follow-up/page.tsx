@@ -15,6 +15,7 @@ import {
   Filter,
   X,
   UserCheck,
+  Zap,
 } from "lucide-react";
 import {
   collection,
@@ -183,10 +184,16 @@ export default function FollowUpPage() {
           <h1 className="text-2xl font-bold text-[var(--brand-navy)]">Follow-Up</h1>
           <p className="text-[var(--brand-muted)] mt-1 text-sm">Track and manage follow-up tasks for members and newcomers.</p>
         </div>
-        <button onClick={openAdd} className="bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-dark)] text-white px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 w-fit focus-ring">
-          <ClipboardList className="w-4 h-4" />
-          <span className="text-sm">Add Task</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => toast.info("Automations Placeholder: Configure Welcome Emails and SMS workflows here later.", { duration: 5000 })} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 w-fit focus-ring">
+            <Zap className="w-4 h-4" />
+            <span className="text-sm">Automations</span>
+          </button>
+          <button onClick={openAdd} className="bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-dark)] text-white px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 w-fit focus-ring">
+            <ClipboardList className="w-4 h-4" />
+            <span className="text-sm">Add Task</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

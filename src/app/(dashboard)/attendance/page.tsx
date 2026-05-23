@@ -31,6 +31,7 @@ import { AttendanceRecord, AttendanceMode, Member } from "@/lib/types";
 import AttendanceChart from "@/components/AttendanceChart";
 import ConfirmModal from "@/components/ConfirmModal";
 import { toast } from "sonner";
+import QRCode from "react-qr-code";
 
 const BRANCHES = ["Main Campus", "North Campus", "South Campus"];
 const PAGE_SIZE = 10;
@@ -51,7 +52,8 @@ const defaultHeadCountForm = {
 export default function AttendancePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [memberSearch, setMemberSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [branchFilter, setBranchFilter] = useState("All");
@@ -110,9 +112,10 @@ export default function AttendancePage() {
     setDeleteConfirm({ isOpen: false, itemId: null });
   };
 
-  const openAdd = () => { setEditingRecord(null); setFormData(defaultHeadCountForm); setIsModalOpen(true); };
+  const openAdd = () => { setEditingRecord(null); setFormData(defaultHeadCountForm); setMemberSearch(""); setIsModalOpen(true); };
   const openEdit = (r: AttendanceRecord) => {
     setEditingRecord(r);
+    setMemberSearch("");
     setFormData({ date: r.date, service: r.service, branch: r.branch, mode: r.mode, maleCount: r.maleCount, femaleCount: r.femaleCount, childrenCount: r.childrenCount, firstTimersCount: r.firstTimersCount, checkedInMemberIds: r.checkedInMemberIds || [], notes: r.notes });
     setIsModalOpen(true);
     setOpenActionId(null);
@@ -125,7 +128,7 @@ export default function AttendancePage() {
     try {
       const payload = {
         ...formData,
-        total: formData.maleCount + formData.femaleCount + formData.childrenCount,
+        total: formData.mode === "checkin" ? formData.checkedInMemberIds.length : formData.maleCount + formData.femaleCount + formData.childrenCount,
       };
 
       if (editingRecord) {
@@ -389,27 +392,75 @@ export default function AttendancePage() {
                   <select value={formData.mode} onChange={(e) => setFormData({ ...formData, mode: e.target.value as AttendanceMode })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 bg-white">
                     <option value="headcount">Headcount</option>
                     <option value="checkin">Check-in</option>
+                    <option value="qrcode">QR Code Check-in</option>
                   </select>
                 </label>
               </div>
-              <div className="grid gap-4 sm:grid-cols-4">
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">Male</span>
-                  <input type="number" min={0} value={formData.maleCount} onChange={(e) => setFormData({ ...formData, maleCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">Female</span>
-                  <input type="number" min={0} value={formData.femaleCount} onChange={(e) => setFormData({ ...formData, femaleCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">Children</span>
-                  <input type="number" min={0} value={formData.childrenCount} onChange={(e) => setFormData({ ...formData, childrenCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">First Timers</span>
-                  <input type="number" min={0} value={formData.firstTimersCount} onChange={(e) => setFormData({ ...formData, firstTimersCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
-                </label>
-              </div>
+              {formData.mode === "qrcode" ? (
+                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-[var(--brand-border)] rounded-3xl bg-[var(--brand-bg)]">
+                  <h3 className="text-lg font-semibold text-[var(--brand-navy)] mb-2">Service Check-in Kiosk</h3>
+                  <p className="text-sm text-[var(--brand-muted)] text-center mb-6 max-w-sm">
+                    Display this QR code at the entrance. Members can scan it with their mobile devices to automatically mark their attendance.
+                  </p>
+                  <div className="bg-white p-4 rounded-2xl shadow-sm border border-[var(--brand-border)]">
+                    <QRCode
+                      value={`https://churchassist.com/check-in?date=${formData.date}&service=${encodeURIComponent(formData.service)}&branch=${encodeURIComponent(formData.branch)}`}
+                      size={200}
+                      fgColor="var(--brand-navy)"
+                    />
+                  </div>
+                </div>
+              ) : formData.mode === "checkin" ? (
+                <div className="space-y-4 border border-[var(--brand-border)] rounded-2xl p-4 bg-[var(--brand-bg)]">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-[var(--brand-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input type="text" value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} placeholder="Search members by name..." className="pl-9 pr-4 py-2.5 border border-[var(--brand-border)] rounded-xl text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20 w-full bg-white" />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2 bg-white rounded-xl border border-[var(--brand-border)] p-2">
+                    {members.filter(m => m.fullName.toLowerCase().includes(memberSearch.toLowerCase())).map(m => (
+                      <label key={m.id} className="flex items-center gap-3 p-2 hover:bg-[var(--brand-bg)] rounded-lg cursor-pointer transition-colors">
+                        <input type="checkbox" className="rounded border-slate-300 text-[var(--brand-blue)] focus:ring-[var(--brand-blue)]"
+                          checked={formData.checkedInMemberIds.includes(m.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, checkedInMemberIds: [...formData.checkedInMemberIds, m.id] });
+                            } else {
+                              setFormData({ ...formData, checkedInMemberIds: formData.checkedInMemberIds.filter(id => id !== m.id) });
+                            }
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-slate-700">{m.fullName}</p>
+                          <p className="text-xs text-[var(--brand-muted)]">{m.branch} • {m.phone || "No phone"}</p>
+                        </div>
+                      </label>
+                    ))}
+                    {members.filter(m => m.fullName.toLowerCase().includes(memberSearch.toLowerCase())).length === 0 && (
+                      <p className="text-sm text-center py-4 text-[var(--brand-muted)]">No members found.</p>
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-[var(--brand-navy)] text-right">Selected: {formData.checkedInMemberIds.length}</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">Male</span>
+                    <input type="number" min={0} value={formData.maleCount} onChange={(e) => setFormData({ ...formData, maleCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                  </label>
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">Female</span>
+                    <input type="number" min={0} value={formData.femaleCount} onChange={(e) => setFormData({ ...formData, femaleCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                  </label>
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">Children</span>
+                    <input type="number" min={0} value={formData.childrenCount} onChange={(e) => setFormData({ ...formData, childrenCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                  </label>
+                  <label className="space-y-2 text-sm">
+                    <span className="font-medium text-slate-700">First Timers</span>
+                    <input type="number" min={0} value={formData.firstTimersCount} onChange={(e) => setFormData({ ...formData, firstTimersCount: parseInt(e.target.value) || 0 })} className="w-full rounded-2xl border border-[var(--brand-border)] px-4 py-3 text-sm outline-none focus:border-[var(--brand-blue)] focus:ring-2 focus:ring-[var(--brand-blue)]/20" />
+                  </label>
+                </div>
+              )}
               <div>
                 <label className="space-y-2 text-sm">
                   <span className="font-medium text-slate-700">Notes</span>

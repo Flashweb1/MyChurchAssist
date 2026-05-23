@@ -28,7 +28,7 @@ export interface Newcomer {
   createdAt: Date;
 }
 
-export type AttendanceMode = "headcount" | "checkin";
+export type AttendanceMode = "headcount" | "checkin" | "qrcode";
 
 export interface AttendanceRecord {
   id: string;

@@ -1,0 +1,15 @@
+{
+  "members": [
+    {"name": "John Doe", "role": "Pastor", "email": "john@example.com"},
+    {"name": "Jane Smith", "role": "Volunteer", "email": "jane@example.com"}
+  ],
+  "attendance": {
+    "today": 85,
+    "week": 620,
+    "month": 2600
+  },
+  "giving": {
+    "total": "₦1,200,000",
+    "monthly": "₦100,000"
+  }
+}

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuth();
@@ -190,6 +191,9 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           <Sparkles className="w-3.5 h-3.5" />
           AI Assistant
         </Link>
+
+        {/* Language Switcher */}
+        <LanguageSwitcher />
 
         {/* Dark Mode Toggle */}
         <button

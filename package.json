@@ -15,6 +15,8 @@
     "@google/generative-ai": "^0.24.1",
     "firebase": "^10.12.0",
     "firebase-admin": "^13.10.0",
+    "i18next": "^26.2.0",
+    "i18next-browser-languagedetector": "^8.2.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^1.14.0",
@@ -23,7 +25,12 @@
     "papaparse": "^5.5.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-i18next": "^17.0.8",
+    "react-markdown": "^10.1.0",
+    "react-qr-code": "^2.0.21",
     "recharts": "^2.12.0",
+    "remark-gfm": "^4.0.1",
+    "resend": "^6.12.3",
     "sonner": "^2.0.7"
   },
   "devDependencies": {
