@@ -103,9 +103,12 @@ export default function SignupPage() {
     try {
       await loginWithGoogle();
     } catch (err: unknown) {
-      console.error("Google sign-in error:", err);
       const fbErr = err as { code?: string; message?: string };
       
+      if (!["auth/popup-closed-by-user", "auth/cancelled-popup-request"].includes(fbErr.code || "")) {
+        console.error("Google sign-in error:", err);
+      }
+
       if (fbErr.code === "auth/popup-blocked") {
         setError("Popup was blocked. Please allow popups and try again.");
       } else if (fbErr.code === "auth/cancelled-popup-request") {
