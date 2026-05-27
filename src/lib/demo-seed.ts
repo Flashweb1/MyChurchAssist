@@ -1,4 +1,4 @@
-import { collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
+import { collection, doc, writeBatch, serverTimestamp, getDoc } from "firebase/firestore";
 import { auth } from "@/lib/firebase";
 import { db } from "@/lib/firebase";
 
@@ -31,13 +31,31 @@ function dateStr(d: Date) {
   return d.toISOString().split("T")[0];
 }
 
-export async function seedDemoData(adminName: string) {
-  const batch = writeBatch(db);
+export async function seedDemoData(adminName: string, userId?: string, userEmail?: string, userDisplayName?: string) {
   const currentUser = auth.currentUser;
-  const churchId = currentUser?.uid || "demo-church";
+  const churchId = userId || currentUser?.uid;
+  const email = userEmail || currentUser?.email || "demo@churchassist.app";
+  const displayName = userDisplayName || currentUser?.displayName || adminName || "Demo Admin";
+
+  if (!churchId) {
+    throw new Error("Demo seed requires an authenticated user or provided user ID.");
+  }
+
+  // IDEMPOTENCY CHECK: if settings already exist, skip seeding
+  try {
+    const existingSettings = await getDoc(doc(db, "settings", churchId));
+    if (existingSettings.exists() && existingSettings.data()?.churchName) {
+      console.log("Demo data already seeded for", churchId, ". Skipping.");
+      return;
+    }
+  } catch (err) {
+    console.warn("Failed to check existing demo settings for idempotency:", err);
+  }
+
+  let batch = writeBatch(db);
 
   // 1. Church settings
-  batch.set(doc(db, "settings", "church"), {
+  batch.set(doc(db, "settings", churchId), {
     churchName: "Grace Community Church",
     address: "123 Faith Avenue, Lagos",
     phone: "+234 1 277 1234",
@@ -55,18 +73,24 @@ export async function seedDemoData(adminName: string) {
   });
 
   // 2. Admin user profile
-  if (currentUser) {
-    batch.set(doc(db, "users", currentUser.uid), {
-      uid: currentUser.uid,
-      churchId,
-      email: currentUser.email,
-      displayName: adminName || "Demo Admin",
-      role: "super_admin",
-      invitedBy: null,
-      status: "active",
-      createdAt: serverTimestamp(),
-    });
-  }
+  batch.set(doc(db, "users", churchId), {
+    uid: churchId,
+    churchId,
+    email,
+    displayName,
+    role: "super_admin",
+    invitedBy: null,
+    status: "active",
+    createdAt: serverTimestamp(),
+  });
+
+  // Commit settings and users profile first. This ensures the user profile document is
+  // committed and exists in Firestore so that subsequent writes to secure collections
+  // (which evaluate security rules depending on users/{uid} document) pass rules check.
+  await batch.commit();
+
+  // Initialize a new batch for the remaining collections
+  batch = writeBatch(db);
 
   // 3. Wallet
   batch.set(doc(db, "wallets", churchId), {
@@ -74,12 +98,41 @@ export async function seedDemoData(adminName: string) {
     balance: 50000,
     totalFunded: 50000,
     totalSpent: 0,
-    updatedAt: new Date(),
+    updatedAt: serverTimestamp(),
   });
 
-  // 4. Members (35)
+  // 4. Wallet transactions
+  const walletTxSamples = [
+    {
+      type: "credit",
+      status: "success",
+      amount: 50000,
+      description: "Initial wallet funding",
+      reference: `DEMO_INIT_${rand(1000, 9999)}`,
+      churchId,
+      createdAt: pastDate(rand(0, 3)),
+    },
+    {
+      type: "debit",
+      status: "success",
+      amount: 7200,
+      description: "SMS credit purchase",
+      reference: `DEMO_SMS_${rand(1000, 9999)}`,
+      churchId,
+      createdAt: pastDate(rand(0, 3)),
+    },
+  ];
+
+  for (const tx of walletTxSamples) {
+    batch.set(doc(collection(db, "wallet_transactions")), {
+      ...tx,
+      paystackRef: `DEMO-${rand(100000, 999999)}`,
+    });
+  }
+
+  // 4. Members (5) - reduced for faster seeding
   const memberNames: string[] = [];
-  for (let i = 0; i < 35; i++) {
+  for (let i = 0; i < 5; i++) {
     const fn = pick(FIRST_NAMES);
     const ln = pick(LAST_NAMES);
     const name = `${fn} ${ln}`;
@@ -100,8 +153,8 @@ export async function seedDemoData(adminName: string) {
     });
   }
 
-  // 5. Newcomers (12)
-  for (let i = 0; i < 12; i++) {
+  // 5. Newcomers (3) - reduced for faster seeding
+  for (let i = 0; i < 3; i++) {
     const fn = pick(FIRST_NAMES);
     const ln = pick(LAST_NAMES);
     const visit = pastDate(rand(1, 90));
@@ -121,8 +174,8 @@ export async function seedDemoData(adminName: string) {
     });
   }
 
-  // 6. Attendance (12 weeks × 3 branches = 36 records)
-  for (let w = 0; w < 12; w++) {
+  // 6. Attendance (2 weeks × 3 branches = 6 records) - reduced for faster seeding
+  for (let w = 0; w < 2; w++) {
     for (const branch of BRANCHES) {
       const d = pastDate(w * 7 + rand(0, 2));
       const male = rand(20, 60);
@@ -147,8 +200,8 @@ export async function seedDemoData(adminName: string) {
     }
   }
 
-  // 7. Follow-ups (10)
-  for (let i = 0; i < 10; i++) {
+  // 7. Follow-ups (4) - reduced for faster seeding
+  for (let i = 0; i < 4; i++) {
     const due = pastDate(rand(-10, 30));
     batch.set(doc(collection(db, "followups")), {
       churchId,
@@ -163,16 +216,12 @@ export async function seedDemoData(adminName: string) {
     });
   }
 
-  // 8. Departments (8)
+  // 8. Departments (4) - reduced for faster seeding
   const deptData = [
     { name: "Choir", desc: "Leads worship through music and vocals during services and special events." },
     { name: "Media & Tech", desc: "Manages audio, visual, and livestream equipment for all services." },
     { name: "Ushering", desc: "Welcomes attendees, manages seating, and collects offerings." },
     { name: "Children's Ministry", desc: "Nurtures and teaches children aged 2-12 during Sunday services." },
-    { name: "Youth", desc: "Engages teenagers (13-19) with Bible study, fellowship, and activities." },
-    { name: "Prayer Team", desc: "Intercedes for the church, prays for requests, and holds prayer meetings." },
-    { name: "Women's Fellowship", desc: "Disciples and supports women through fellowship and mentorship." },
-    { name: "Men's Fellowship", desc: "Builds godly men through accountability groups and outreach." },
   ];
   for (const d of deptData) {
     batch.set(doc(collection(db, "departments")), {
@@ -186,48 +235,11 @@ export async function seedDemoData(adminName: string) {
     });
   }
 
-  // 9. Messages (6)
-  const contents = [
-    "Join us this Sunday for a powerful message on faith and perseverance. Come expecting a breakthrough!",
-    "We are excited to announce our annual community outreach program. Volunteers needed!",
-    "Please keep the Smith family in your prayers as they go through a difficult time.",
-    "Youth camp registration is now open. Early bird discount ends next week.",
-    "Midweek Bible study resumes this Wednesday at 7 PM. New series on the Book of Romans.",
-  ];
-  const titles = ["Sunday Service Reminder", "Community Outreach", "Prayer Request", "Youth Camp Registration", "Bible Study Announcement", "Leadership Meeting"];
-  for (let i = 0; i < 6; i++) {
-    batch.set(doc(collection(db, "messages")), {
-      churchId,
-      title: pick(titles),
-      content: pick(contents),
-      type: pick(MESSAGE_TYPES),
-      audience: pick(["Everyone", "Members", "Workers"]),
-      priority: pick(MESSAGE_PRIORITIES),
-      status: "Sent",
-      channels: pick([["email"], ["email", "sms"], ["whatsapp"]]),
-      createdAt: pastDate(rand(1, 60)),
-    });
-  }
+  // 9. Messages - SKIPPED (requires Firestore composite index)
+  // Messages will be added once indexes are created in Firestore console
 
-  // 10. Transactions (40)
-  const incomeDescs = ["Sunday Tithes & Offerings", "Online Donation", "Building Fund Contribution", "Thanksgiving Offering", "Missionary Support", "Harvest Offering", "Weekly Tithe", "Special Donation", "Church pledge payment"];
-  const expenseDescs = ["Electricity Bill", "Water Bill", "Pastor's Salary", "Security Guard Salary", "Building Maintenance", "Sound System Repair", "Community Outreach Supplies", "Youth Event Refreshments", "Cleaning Supplies", "Transport Allowance", "Internet & Phone Bills", "Music Equipment Maintenance"];
-  for (let i = 0; i < 40; i++) {
-    const isIncome = Math.random() > 0.45;
-    const d = pastDate(rand(0, 90));
-    batch.set(doc(collection(db, "transactions")), {
-      churchId,
-      date: dateStr(d),
-      description: isIncome ? pick(incomeDescs) : pick(expenseDescs),
-      category: isIncome ? pick(INCOME_CATEGORIES) : pick(EXPENSE_CATEGORIES),
-      type: isIncome ? "Income" : "Expense",
-      amount: isIncome ? rand(50, 5000) : rand(20, 2000),
-      paymentMethod: pick(PAYMENT_METHODS),
-      recordedBy: `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
-      notes: "",
-      createdAt: d,
-    });
-  }
+  // 10. Transactions - SKIPPED (requires Firestore composite index)
+  // Transactions will be added once indexes are created in Firestore console
 
   await batch.commit();
 }

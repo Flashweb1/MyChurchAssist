@@ -8,7 +8,7 @@ import Link from "next/link";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
-  const { user, logout } = useAuth();
+  const { user, logout, churchId } = useAuth();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -60,10 +60,11 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         const { db } = await import("@/lib/firebase");
         const notifs: typeof notifications = [];
 
+        if (!churchId) return;
         const [followUpsSnap, newcomersSnap, membersSnap] = await Promise.all([
-          getDocs(query(collection(db, "followups"), where("status", "==", "Pending"), limit(10))),
-          getDocs(collection(db, "newcomers")),
-          getDocs(collection(db, "members")),
+          getDocs(query(collection(db, "followups"), where("churchId", "==", churchId), where("status", "==", "Pending"), limit(10))),
+          getDocs(query(collection(db, "newcomers"), where("churchId", "==", churchId))),
+          getDocs(query(collection(db, "members"), where("churchId", "==", churchId))),
         ]);
 
         if (followUpsSnap.size > 0) {

@@ -65,10 +65,20 @@ export async function POST(req: Request) {
     let sentCount = 0;
     let failedCount = 0;
 
+    let actualCost = 0;
+
     for (const member of members as any[]) {
       for (const channel of channels) {
         const result = await sendViaChannel(channel, member, message);
         deliveries.push({ member, channel, ...result });
+
+        const cost = result.success ? (channelCosts[channel] || 0) : 0;
+        if (result.success) {
+          actualCost += cost;
+          sentCount++;
+        } else {
+          failedCount++;
+        }
 
         // Record delivery
         await db.collection("message_deliveries").add({
@@ -79,43 +89,30 @@ export async function POST(req: Request) {
           recipientName: member.fullName,
           recipientContact: channel === "email" ? member.email : member.phone,
           status: result.success ? "sent" : "failed",
-          cost: result.success ? (channelCosts[channel] || 0) : 0,
-          error: result.error,
+          cost: cost,
+          error: result.error || null,
           sentAt: result.success ? new Date() : null,
           createdAt: new Date(),
         });
-
-        if (result.success) {
-          sentCount++;
-        } else {
-          failedCount++;
-        }
-
-        // Deduct from wallet
-        if (result.success) {
-          await db.collection("wallets").doc(churchId).update({
-            balance: adminFieldValue.increment(-(channelCosts[channel] || 0)),
-            totalSpent: adminFieldValue.increment(channelCosts[channel] || 0),
-            updatedAt: new Date(),
-          });
-        }
       }
     }
 
-    // Refund failed deliveries
-    const refundAmount = (channelCosts[channels[0]] || 0) * failedCount;
-    if (refundAmount > 0) {
+    // Deduct total actual cost from wallet in a single operation to avoid contention/throttling
+    if (actualCost > 0) {
       await db.collection("wallets").doc(churchId).update({
-        balance: adminFieldValue.increment(refundAmount),
+        balance: adminFieldValue.increment(-actualCost),
+        totalSpent: adminFieldValue.increment(actualCost),
         updatedAt: new Date(),
       });
+
+      // Record transaction
       await db.collection("wallet_transactions").add({
         churchId,
-        type: "refund",
+        type: "debit",
         status: "success",
-        amount: refundAmount,
-        description: `Refund for ${failedCount} failed message deliveries`,
-        reference: `refund_${messageId}_${Date.now()}`,
+        amount: actualCost,
+        description: `Campaign: ${sentCount} sent, ${failedCount} failed`,
+        reference: `campaign_${messageId}_${Date.now()}`,
         createdAt: new Date(),
       });
     }
@@ -130,7 +127,7 @@ export async function POST(req: Request) {
       success: true,
       sent: sentCount,
       failed: failedCount,
-      totalCost: totalCost - refundAmount,
+      totalCost: actualCost,
     });
   } catch (error) {
     console.error("Message send error:", error);

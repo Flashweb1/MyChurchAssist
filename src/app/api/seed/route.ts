@@ -234,59 +234,73 @@ export async function POST(request: Request) {
     }
     const token = authHeader.split("Bearer ")[1];
     initAdmin();
-    await getAuth().verifyIdToken(token);
+    const decodedToken = await getAuth().verifyIdToken(token);
+    const uid = decodedToken.uid;
 
     const db = getFirestore();
+
+    // Fetch the user to check role and get churchId
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+    const userData = userDoc.data()!;
+    if (userData.role !== "super_admin") {
+      return NextResponse.json({ error: "Only Super Admin can seed data" }, { status: 403 });
+    }
+    const churchId = userData.churchId || uid;
+
     const batch = db.batch();
 
-    // Clear all existing data
+    // Clear existing data only for this churchId
     const collections = ["members", "newcomers", "attendance", "followups", "departments", "messages", "transactions"];
     for (const col of collections) {
-      const snap = await db.collection(col).get();
+      const snap = await db.collection(col).where("churchId", "==", churchId).get();
       snap.forEach((doc) => batch.delete(doc.ref));
     }
     await batch.commit();
 
-    // Seed with demo data
+    // Seed with demo data scoped to churchId
+    const seedBatch = db.batch();
     const memberNames: string[] = [];
     const members = generateMembers(35);
     for (const m of members) {
       const ref = db.collection("members").doc();
-      batch.set(ref, m);
+      seedBatch.set(ref, { ...m, churchId });
       memberNames.push(m.fullName as string);
     }
 
     const newcomers = generateNewcomers(12);
     for (const n of newcomers) {
-      batch.set(db.collection("newcomers").doc(), n);
+      seedBatch.set(db.collection("newcomers").doc(), { ...n, churchId });
     }
 
     const attendance = generateAttendance(12);
     for (const a of attendance) {
-      batch.set(db.collection("attendance").doc(), a);
+      seedBatch.set(db.collection("attendance").doc(), { ...a, churchId });
     }
 
     const followUps = generateFollowUps(10, memberNames);
     for (const f of followUps) {
-      batch.set(db.collection("followups").doc(), f);
+      seedBatch.set(db.collection("followups").doc(), { ...f, churchId });
     }
 
     const departments = generateDepartments();
     for (const d of departments) {
-      batch.set(db.collection("departments").doc(), d);
+      seedBatch.set(db.collection("departments").doc(), { ...d, churchId });
     }
 
     const messages = generateMessages(6);
     for (const m of messages) {
-      batch.set(db.collection("messages").doc(), m);
+      seedBatch.set(db.collection("messages").doc(), { ...m, churchId });
     }
 
     const transactions = generateTransactions(40);
     for (const t of transactions) {
-      batch.set(db.collection("transactions").doc(), t);
+      seedBatch.set(db.collection("transactions").doc(), { ...t, churchId });
     }
 
-    await batch.commit();
+    await seedBatch.commit();
 
     return NextResponse.json({
       success: true,

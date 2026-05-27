@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { doc, setDoc, getDoc } from "firebase/firestore";
@@ -37,7 +39,7 @@ interface OnboardingForm {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -67,18 +69,78 @@ export default function OnboardingPage() {
     if (!user) { router.replace("/login"); return; }
     const check = async () => {
       try {
-        const snap = await getDoc(doc(db, "settings", "church"));
-        if (snap.exists() && snap.data()?.churchName) {
-          router.replace("/dashboard");
-          return;
+        console.log("[Onboarding] check starting for user.uid:", user.uid);
+        const { collection, query, where, getDocs, limit } = await import("firebase/firestore");
+        
+        // 1. Check if there is a pending invitation for this user's email
+        if (user.email) {
+          const inviteQuery = query(
+            collection(db, "invitations"),
+            where("email", "==", user.email),
+            where("status", "==", "pending"),
+            limit(1)
+          );
+          const inviteSnap = await getDocs(inviteQuery);
+          
+          if (!inviteSnap.empty) {
+            console.log("[Onboarding] invitation found!");
+            const inviteDoc = inviteSnap.docs[0];
+            const inviteData = inviteDoc.data();
+            
+            // Accept the invitation
+            // Create user profile
+            await setDoc(doc(db, "users", user.uid), {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || inviteData.displayName || "Team Member",
+              role: inviteData.role,
+              churchId: inviteData.churchId,
+              invitedBy: inviteData.invitedBy || null,
+              status: "active",
+              createdAt: new Date(),
+            });
+            
+            // Set custom claims (roles) via the backend
+            const token = await user.getIdToken();
+            await fetch("/api/users/set-role", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ uid: user.uid, role: inviteData.role }),
+            }).catch((err) => console.error("Error invoking set-role:", err));
+            
+            // Mark invitation as accepted
+            await setDoc(doc(db, "invitations", inviteDoc.id), { status: "accepted" }, { merge: true });
+            
+            // Refresh local auth context and redirect to dashboard
+            await refreshProfile();
+            console.log("[Onboarding] redirecting to dashboard after invitation accept");
+            router.replace("/dashboard");
+            return;
+          }
         }
-      } catch {
-        // Firestore read failed — show onboarding form
+
+        // 2. Check if user profile already exists
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        console.log("[Onboarding] userDoc exists:", userDoc.exists(), "data:", userDoc.data());
+        if (userDoc.exists()) {
+          const profile = userDoc.data();
+          const cId = profile?.churchId || user.uid;
+          console.log("[Onboarding] Fetching settings for cId:", cId);
+          const settingsDoc = await getDoc(doc(db, "settings", cId));
+          console.log("[Onboarding] settingsDoc exists:", settingsDoc.exists(), "data:", settingsDoc.data());
+          if (settingsDoc.exists() && settingsDoc.data()?.churchName?.trim()) {
+            console.log("[Onboarding] settingsDoc has churchName! Redirecting to dashboard");
+            router.replace("/dashboard");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Onboarding check error:", error);
       }
       setChecking(false);
     };
     check();
-  }, [user, router]);
+  }, [user, router, refreshProfile]);
 
   if (checking) {
     return (
@@ -91,9 +153,13 @@ export default function OnboardingPage() {
   const countryConfig = COUNTRIES[form.country] || COUNTRIES.GH;
 
   const handleSave = async () => {
+    if (!user) {
+      toast.error("User session not found. Please log in again.");
+      return;
+    }
     setSaving(true);
     try {
-      if (form.displayName && user) {
+      if (form.displayName) {
         await updateProfile(user, { displayName: form.displayName });
       }
       const settings: ChurchSettings = {
@@ -110,29 +176,29 @@ export default function OnboardingPage() {
         locale: countryConfig.locale,
         timezone: countryConfig.timezone,
       };
-      await setDoc(doc(db, "settings", "church"), settings);
+      await setDoc(doc(db, "settings", user.uid), settings);
 
-      if (user) {
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          email: user.email,
-          displayName: form.displayName || user.email?.split("@")[0] || "Admin",
-          role: "super_admin" as UserRole,
-          invitedBy: null,
-          status: "active",
-          createdAt: new Date(),
-        });
-        // Non-blocking: set custom claims (fails gracefully without admin SDK credentials)
-        user.getIdToken().then((token) =>
-          fetch("/api/users/set-role", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ uid: user.uid, role: "super_admin" }),
-          }).catch(() => {})
-        ).catch(() => {});
-      }
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        churchId: user.uid, // Explicitly set churchId for the new church admin
+        email: user.email,
+        displayName: form.displayName || user.email?.split("@")[0] || "Admin",
+        role: "super_admin" as UserRole,
+        invitedBy: null,
+        status: "active",
+        createdAt: new Date(),
+      });
+      // Non-blocking: set custom claims (fails gracefully without admin SDK credentials)
+      user.getIdToken().then((token) =>
+        fetch("/api/users/set-role", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ uid: user.uid, role: "super_admin" }),
+        }).catch(() => {})
+      ).catch(() => {});
 
       toast.success("Church setup complete! Welcome aboard.");
+      await refreshProfile(); // Refresh local auth context before redirecting
       router.push("/dashboard");
     } catch (error) {
       console.error("Onboarding save error:", error);
@@ -318,7 +384,7 @@ export default function OnboardingPage() {
           {STEPS.map((s, i) => (
             <div key={i} className={`flex items-center gap-1 ${i > 0 ? "ml-1" : ""}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                i + 1 <= step ? "bg-[var(--brand-blue)] text-white" : i < step ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-400"
+                i + 1 < step ? "bg-emerald-500 text-white" : i + 1 === step ? "bg-[var(--brand-blue)] text-white" : "bg-slate-200 text-slate-400"
               }`}>
                 {i + 1 < step ? <Check className="w-4 h-4" /> : i + 1}
               </div>

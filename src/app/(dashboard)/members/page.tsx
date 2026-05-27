@@ -26,11 +26,13 @@ import {
   limit,
   doc,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 import { addDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Member } from "@/lib/types";
 import ConfirmModal from "@/components/ConfirmModal";
+import { useAuth } from "@/lib/auth";
 
 const BRANCHES = ["Main Campus", "North Campus", "South Campus"];
 const STATUSES: ("Active" | "Inactive")[] = ["Active", "Inactive"];
@@ -46,6 +48,7 @@ const defaultFormData = {
 };
 
 export default function MembersPage() {
+  const { churchId } = useAuth();
   const searchParams = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
@@ -65,8 +68,9 @@ export default function MembersPage() {
   });
 
   const fetchMembers = async () => {
+    if (!churchId) return;
     try {
-      const q = query(collection(db, "members"), orderBy("createdAt", "desc"), limit(500));
+      const q = query(collection(db, "members"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(500));
       const querySnapshot = await getDocs(q);
       const membersData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -81,8 +85,10 @@ export default function MembersPage() {
   };
 
   useEffect(() => {
-    fetchMembers();
-  }, []);
+    if (churchId) {
+      fetchMembers();
+    }
+  }, [churchId]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -138,8 +144,10 @@ export default function MembersPage() {
         });
         toast.success("Member updated successfully.");
       } else {
+        if (!churchId) return;
         await addDoc(collection(db, "members"), {
           ...formData,
+          churchId,
           createdAt: new Date(),
         });
         toast.success("Member added successfully.");

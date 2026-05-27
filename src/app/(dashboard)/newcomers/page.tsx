@@ -23,11 +23,13 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Newcomer } from "@/lib/types";
 import ConfirmModal from "@/components/ConfirmModal";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 const NEWCOMER_STATUSES: Newcomer["status"][] = ["New", "Followed Up", "Member", "Lost Contact"];
 const PAGE_SIZE = 10;
@@ -46,6 +48,7 @@ const defaultFormData = {
 };
 
 export default function NewcomersPage() {
+  const { churchId } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newcomers, setNewcomers] = useState<Newcomer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,8 +65,9 @@ export default function NewcomersPage() {
   });
 
   const fetchNewcomers = async () => {
+    if (!churchId) return;
     try {
-      const q = query(collection(db, "newcomers"), orderBy("createdAt", "desc"), limit(500));
+      const q = query(collection(db, "newcomers"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(500));
       const snapshot = await getDocs(q);
       setNewcomers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Newcomer[]);
     } catch (error) {
@@ -74,7 +78,11 @@ export default function NewcomersPage() {
     }
   };
 
-  useEffect(() => { fetchNewcomers(); }, []);
+  useEffect(() => {
+    if (churchId) {
+      fetchNewcomers();
+    }
+  }, [churchId]);
   useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter]);
 
   const filtered = useMemo(() => {
@@ -113,8 +121,10 @@ export default function NewcomersPage() {
         });
         toast.success("Newcomer updated successfully.");
       } else {
+        if (!churchId) return;
         await addDoc(collection(db, "newcomers"), {
           ...formData,
+          churchId,
           createdAt: new Date(),
         });
         toast.success("Newcomer logged successfully.");

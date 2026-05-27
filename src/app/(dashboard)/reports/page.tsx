@@ -14,12 +14,14 @@ import {
   Loader2,
   UserCheck,
 } from "lucide-react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import AttendanceChart from "@/components/AttendanceChart";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 export default function ReportsPage() {
+  const { churchId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [reportData, setReportData] = useState({
@@ -36,13 +38,14 @@ export default function ReportsPage() {
 
   useEffect(() => {
     async function fetchReportData() {
+      if (!churchId) return;
       try {
         const [membersSnap, newcomersSnap, attendanceSnap, departmentsSnap, followUpsSnap] = await Promise.all([
-          getDocs(collection(db, "members")),
-          getDocs(collection(db, "newcomers")),
-          getDocs(collection(db, "attendance")),
-          getDocs(collection(db, "departments")),
-          getDocs(collection(db, "followups")),
+          getDocs(query(collection(db, "members"), where("churchId", "==", churchId))),
+          getDocs(query(collection(db, "newcomers"), where("churchId", "==", churchId))),
+          getDocs(query(collection(db, "attendance"), where("churchId", "==", churchId))),
+          getDocs(query(collection(db, "departments"), where("churchId", "==", churchId))),
+          getDocs(query(collection(db, "followups"), where("churchId", "==", churchId))),
         ]);
 
         const members = membersSnap.docs.map((d) => d.data());
@@ -72,8 +75,10 @@ export default function ReportsPage() {
         setLoading(false);
       }
     }
-    fetchReportData();
-  }, []);
+    if (churchId) {
+      fetchReportData();
+    }
+  }, [churchId]);
 
   const handleExportPDF = async () => {
     setExporting(true);

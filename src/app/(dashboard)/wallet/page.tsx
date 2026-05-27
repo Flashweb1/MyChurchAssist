@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Wallet, Plus, ArrowUpRight, RefreshCw, Clock, CheckCircle2, XCircle } from "lucide-react";
-import { collection, getDocs, query, orderBy, limit, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, doc, getDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -22,7 +22,7 @@ export default function WalletPage() {
     try {
       const [walletSnap, txsSnap] = await Promise.all([
         getDoc(doc(db, "wallets", churchId)),
-        getDocs(query(collection(db, "wallet_transactions"), orderBy("createdAt", "desc"), limit(50))),
+        getDocs(query(collection(db, "wallet_transactions"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(50))),
       ]);
       if (walletSnap.exists()) setWallet(walletSnap.data() as any);
       setTxs(txsSnap.docs.map((d) => ({ id: d.id, ...d.data() })));

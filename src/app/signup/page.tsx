@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import Image from "next/image";
 import Link from "next/link";
-import { seedDemoData } from "@/lib/demo-seed";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -18,27 +19,38 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
-  const { user, login, signup, loginWithGoogle, loading: authLoading } = useAuth();
-  const isDemoRef = useRef(false);
-  const demoSeededRef = useRef(false);
+  const { user, signup, loginWithGoogle, logout, loading: authLoading, churchId } = useAuth();
 
   // Automatically redirect to onboarding (or dashboard if already set up).
   // The onboarding layout handles the redirect to dashboard if settings exist.
   useEffect(() => {
-    if (!user || authLoading) return;
+    // Wait until Firebase has fully resolved auth state (including session restore from IndexedDB)
+    if (authLoading) return;
+    // No active session — stay on signup page
+    if (!user) return;
 
-    if (isDemoRef.current && !demoSeededRef.current) {
-      // Demo flow: seed data then go to dashboard
-      demoSeededRef.current = true;
-      seedDemoData(user.displayName || "Demo Admin")
-        .catch((err) => console.error("Demo seed error:", err))
-        .then(() => new Promise((r) => setTimeout(r, 800))) // Wait for Firestore consistency
-        .finally(() => router.push("/dashboard"));
-      return;
-    }
+    const routeUser = async () => {
+      const targetId = churchId || user.uid;
+      try {
+        const snap = await getDoc(doc(db, "settings", targetId));
+        const onboarded = snap.exists() && !!snap.data()?.churchName?.trim();
 
-    router.push("/onboarding");
-  }, [user, authLoading, router]);
+        if (onboarded) {
+          // Fully set up — go to dashboard
+          router.replace("/dashboard");
+        } else {
+          // Active session exists but onboarding was never completed.
+          // The user explicitly visited /signup, so sign them out silently
+          // so they can create a new account without being sent to onboarding.
+          await logout();
+        }
+      } catch (err) {
+        console.error("Error checking onboarding status:", err);
+        await logout().catch(() => {});
+      }
+    };
+    routeUser();
+  }, [user, authLoading, churchId, router, logout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +69,13 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await signup(email, password);
+      const credential = await signup(email, password);
+      if (credential.user && name) {
+        const { updateProfile } = await import("firebase/auth");
+        await updateProfile(credential.user, { displayName: name }).catch((err) => {
+          console.error("Failed to update profile name:", err);
+        });
+      }
     } catch (err: unknown) {
       const code = (err as { code?: string }).code;
       switch (code) {
@@ -85,35 +103,36 @@ export default function SignupPage() {
     try {
       await loginWithGoogle();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign up failed. Please try again.");
+      console.error("Google sign-in error:", err);
+      const fbErr = err as { code?: string; message?: string };
+      
+      if (fbErr.code === "auth/popup-blocked") {
+        setError("Popup was blocked. Please allow popups and try again.");
+      } else if (fbErr.code === "auth/cancelled-popup-request") {
+        setError("Sign-in was cancelled.");
+      } else if (fbErr.code === "auth/popup-closed-by-user") {
+        setError("You closed the sign-in window.");
+      } else {
+        setError(fbErr.message || "Sign up failed. Please try again.");
+      }
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setError("");
-    isDemoRef.current = true;
-    demoSeededRef.current = false;
-
-    const randomId = Math.floor(Math.random() * 100000);
-    const demoEmail = `demo_${randomId}@churchassist.app`;
-    const demoPass = "demo1234";
-
-    try {
-      await signup(demoEmail, demoPass);
-    } catch {
-      try {
-        await login("demo@churchassist.app", "demo1234");
-      } catch {
-        setError("Demo login failed. Please try again.");
-        isDemoRef.current = false;
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Show a spinner while Firebase resolves a persisted session.
+  // Without this, the full signup form flashes then suddenly disappears
+  // when an existing session is restored and the user gets redirected.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[var(--brand-navy)] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-[var(--brand-blue)]" />
+          <p className="text-slate-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--brand-navy)] flex items-center justify-center p-4">
@@ -163,7 +182,7 @@ export default function SignupPage() {
           {/* Demo Sign In Button */}
           <button
             type="button"
-            onClick={handleDemoLogin}
+            onClick={() => router.push("/demo")}
             disabled={loading || googleLoading}
             className="w-full flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl font-medium transition-colors mb-6 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
           >

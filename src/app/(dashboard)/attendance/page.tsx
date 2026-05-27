@@ -25,6 +25,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AttendanceRecord, AttendanceMode, Member } from "@/lib/types";
@@ -32,6 +33,7 @@ import AttendanceChart from "@/components/AttendanceChart";
 import ConfirmModal from "@/components/ConfirmModal";
 import { toast } from "sonner";
 import QRCode from "react-qr-code";
+import { useAuth } from "@/lib/auth";
 
 const BRANCHES = ["Main Campus", "North Campus", "South Campus"];
 const PAGE_SIZE = 10;
@@ -50,6 +52,7 @@ const defaultHeadCountForm = {
 };
 
 export default function AttendancePage() {
+  const { churchId } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -70,8 +73,9 @@ export default function AttendancePage() {
   const [, setActiveMode] = useState<AttendanceMode>("headcount");
 
   const fetchRecords = async () => {
+    if (!churchId) return;
     try {
-      const q = query(collection(db, "attendance"), orderBy("createdAt", "desc"), limit(500));
+      const q = query(collection(db, "attendance"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(500));
       const snapshot = await getDocs(q);
       setRecords(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as AttendanceRecord[]);
     } catch (error) {
@@ -83,8 +87,9 @@ export default function AttendancePage() {
   };
 
   const fetchMembers = async () => {
+    if (!churchId) return;
     try {
-      const snapshot = await getDocs(query(collection(db, "members"), limit(500)));
+      const snapshot = await getDocs(query(collection(db, "members"), where("churchId", "==", churchId), limit(500)));
       setMembers(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Member[]);
     } catch (error) {
       console.error("Error fetching members for check-in:", error);
@@ -92,7 +97,12 @@ export default function AttendancePage() {
     }
   };
 
-  useEffect(() => { fetchRecords(); fetchMembers(); }, []);
+  useEffect(() => {
+    if (churchId) {
+      fetchRecords();
+      fetchMembers();
+    }
+  }, [churchId]);
   useEffect(() => { setCurrentPage(1); }, [searchQuery, branchFilter]);
 
   const filtered = useMemo(() => {
@@ -135,8 +145,10 @@ export default function AttendancePage() {
         await updateDoc(doc(db, "attendance", editingRecord.id), payload);
         toast.success("Attendance record updated successfully.");
       } else {
+        if (!churchId) return;
         await addDoc(collection(db, "attendance"), {
           ...payload,
+          churchId,
           createdAt: new Date(),
         });
         toast.success("Attendance record saved successfully.");

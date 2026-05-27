@@ -16,8 +16,6 @@ const PROTECTED_PATHS = [
   '/ai-assistant',
 ];
 
-const AUTH_PATHS = ['/login', '/signup'];
-
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -38,11 +36,6 @@ export function proxy(request: NextRequest) {
   if (isProtected && !session) {
     const loginUrl = new URL('/login', request.url);
     return NextResponse.redirect(loginUrl);
-  }
-
-  // Prevent logged-in users from accessing /login or /signup → redirect to /dashboard
-  if (AUTH_PATHS.includes(pathname) && session) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return NextResponse.next({

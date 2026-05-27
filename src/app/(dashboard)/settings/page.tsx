@@ -18,7 +18,7 @@ import {
   CreditCard,
   Shield,
 } from "lucide-react";
-import { collection, doc, setDoc, getDoc, getDocs, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { updateProfile } from "firebase/auth";
 import { useAuth } from "@/lib/auth";
@@ -43,10 +43,10 @@ const defaultSettings: ChurchSettings = {
   timezone: "Africa/Accra",
 };
 
-type TabKey = "general" | "branches" | "services" | "billing";
+type TabKey = "general" | "branches" | "services" | "team" | "billing";
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, userProfile, churchId } = useAuth();
   const [settings, setSettings] = useState<ChurchSettings>(defaultSettings);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -60,10 +60,123 @@ export default function SettingsPage() {
   const [newService, setNewService] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("general");
 
+  // Team states
+  const [members, setMembers] = useState<any[]>([]);
+  const [invitations, setInvitations] = useState<any[]>([]);
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteName, setInviteName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("editor");
+  const [inviting, setInviting] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+
+  const isSuperAdmin = userProfile?.role === "super_admin";
+
+  const fetchTeam = async () => {
+    if (!churchId) return;
+    setLoadingTeam(true);
+    try {
+      const usersQuery = query(collection(db, "users"), where("churchId", "==", churchId));
+      const usersSnap = await getDocs(usersQuery);
+      setMembers(usersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      const invitesQuery = query(
+        collection(db, "invitations"),
+        where("churchId", "==", churchId),
+        where("status", "==", "pending")
+      );
+      const invitesSnap = await getDocs(invitesQuery);
+      setInvitations(invitesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (error) {
+      console.error("Error loading team:", error);
+    } finally {
+      setLoadingTeam(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "team" && churchId) {
+      fetchTeam();
+    }
+  }, [activeTab, churchId]);
+
+  const handleUpdateRole = async (memberId: string, newRole: string) => {
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch("/api/users/set-role", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ uid: memberId, role: newRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update role");
+      toast.success("Role updated successfully!");
+      fetchTeam();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update role");
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      await deleteDoc(doc(db, "users", memberId));
+      toast.success("Member removed successfully!");
+      fetchTeam();
+    } catch {
+      toast.error("Failed to remove member.");
+    }
+  };
+
+  const handleInviteUser = async () => {
+    if (!inviteName.trim() || !inviteEmail.trim()) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    setInviting(true);
+    try {
+      const inviteRef = doc(collection(db, "invitations"));
+      await setDoc(inviteRef, {
+        email: inviteEmail.trim().toLowerCase(),
+        displayName: inviteName.trim(),
+        role: inviteRole,
+        churchId,
+        status: "pending",
+        invitedBy: user?.uid || null,
+        createdAt: new Date(),
+      });
+      toast.success("Invitation sent successfully!");
+      setShowInviteModal(false);
+      setInviteName("");
+      setInviteEmail("");
+      setInviteRole("editor");
+      fetchTeam();
+    } catch (err: any) {
+      console.error("Invite error:", err);
+      toast.error("Failed to send invitation.");
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    try {
+      await deleteDoc(doc(db, "invitations", inviteId));
+      toast.success("Invitation revoked successfully!");
+      fetchTeam();
+    } catch {
+      toast.error("Failed to revoke invitation.");
+    }
+  };
+
   useEffect(() => {
     async function loadSettings() {
+      if (!churchId) return;
       try {
-        const docRef = doc(db, "settings", "church");
+        const docRef = doc(db, "settings", churchId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setSettings({ ...defaultSettings, ...docSnap.data() } as ChurchSettings);
@@ -75,13 +188,14 @@ export default function SettingsPage() {
       }
     }
     loadSettings();
-  }, []);
+  }, [churchId]);
 
   const handleSave = async () => {
+    if (!churchId) return;
     setSaving(true);
     setSaved(false);
     try {
-      await setDoc(doc(db, "settings", "church"), settings);
+      await setDoc(doc(db, "settings", churchId), settings);
       
       if (user && adminName !== user.displayName) {
         await updateProfile(user, { displayName: adminName });
@@ -121,9 +235,10 @@ export default function SettingsPage() {
   };
 
   const handleReset = async () => {
+    if (!churchId) return;
     setResetting(true);
     try {
-      await setDoc(doc(db, "settings", "church"), defaultSettings);
+      await setDoc(doc(db, "settings", churchId), defaultSettings);
       setSettings(defaultSettings);
       toast.success("Settings reset to defaults.");
     } catch {
@@ -138,7 +253,7 @@ export default function SettingsPage() {
     setSeeding(true);
     try {
       const { seedDemoData } = await import("@/lib/demo-seed");
-      await seedDemoData(adminName || "Admin");
+      await seedDemoData(adminName || "Admin", churchId || undefined);
       toast.success("Demo data seeded successfully!");
     } catch {
       toast.error("Failed to seed demo data.");
@@ -152,6 +267,7 @@ export default function SettingsPage() {
     { key: "general", label: "General", icon: <Settings className="w-4 h-4" /> },
     { key: "branches", label: "Branches", icon: <Building2 className="w-4 h-4" /> },
     { key: "services", label: "Service Times", icon: <Calendar className="w-4 h-4" /> },
+    { key: "team", label: "Team", icon: <UserIcon className="w-4 h-4" /> },
     { key: "billing", label: "Billing", icon: <CreditCard className="w-4 h-4" /> },
   ];
 
@@ -455,6 +571,165 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
+          {/* Team Tab */}
+          {activeTab === "team" && (
+            <div className="space-y-6">
+              {!isSuperAdmin ? (
+                <div className="p-6 text-center border border-[var(--brand-border)] bg-[var(--brand-bg)] rounded-xl">
+                  <p className="text-slate-600 font-medium">Only the Super Admin can manage team members and invites.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Active Team Members */}
+                  <div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                      <div>
+                        <h3 className="text-sm font-semibold text-[var(--brand-navy)] uppercase tracking-wider flex items-center gap-2">
+                          <UserIcon className="w-4 h-4 text-[var(--brand-blue)]" />
+                          Team Members
+                        </h3>
+                        <p className="text-xs text-[var(--brand-muted)] mt-1">Users with active access to your church data.</p>
+                      </div>
+                      <button
+                        onClick={() => setShowInviteModal(true)}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-[var(--brand-blue)] text-white rounded-xl hover:bg-[var(--brand-blue-dark)] transition-colors text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 focus-ring"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Invite Member
+                      </button>
+                    </div>
+
+                    <div className="border border-[var(--brand-border)] rounded-xl overflow-hidden bg-white shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-[var(--brand-bg)] text-[var(--brand-muted)] border-b border-[var(--brand-border)]">
+                            <tr>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider">Name</th>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider">Email</th>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider">Role</th>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--brand-border-light)]">
+                            {loadingTeam ? (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-8 text-center">
+                                  <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-blue)] mx-auto" />
+                                </td>
+                              </tr>
+                            ) : members.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-8 text-center text-[var(--brand-muted)]">
+                                  No active team members found.
+                                </td>
+                              </tr>
+                            ) : (
+                              members.map((member) => (
+                                <tr key={member.id} className="hover:bg-[var(--brand-bg)]/30 transition-colors">
+                                  <td className="px-6 py-4 font-medium text-slate-900">{member.displayName}</td>
+                                  <td className="px-6 py-4 text-slate-600">{member.email}</td>
+                                  <td className="px-6 py-4">
+                                    {member.uid === user?.uid ? (
+                                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
+                                        Super Admin
+                                      </span>
+                                    ) : (
+                                      <select
+                                        value={member.role || "viewer"}
+                                        onChange={(e) => handleUpdateRole(member.id, e.target.value)}
+                                        className="px-2.5 py-1.5 border border-[var(--brand-border)] rounded-xl text-xs font-semibold bg-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--brand-blue)]/20"
+                                      >
+                                        <option value="admin">Admin</option>
+                                        <option value="editor">Editor</option>
+                                        <option value="finance">Finance</option>
+                                        <option value="viewer">Viewer</option>
+                                      </select>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    {member.uid !== user?.uid && (
+                                      <button
+                                        onClick={() => setMemberToRemove(member.id)}
+                                        className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors"
+                                      >
+                                        Remove
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Pending Invitations */}
+                  <div className="pt-6 border-t border-[var(--brand-border-light)]">
+                    <div className="mb-4">
+                      <h3 className="text-sm font-semibold text-[var(--brand-navy)] uppercase tracking-wider flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-[var(--brand-blue)]" />
+                        Pending Invites
+                      </h3>
+                      <p className="text-xs text-[var(--brand-muted)] mt-1">Invitations sent to team members who haven't completed registration.</p>
+                    </div>
+
+                    <div className="border border-[var(--brand-border)] rounded-xl overflow-hidden bg-white shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-[var(--brand-bg)] text-[var(--brand-muted)] border-b border-[var(--brand-border)]">
+                            <tr>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider">Name</th>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider">Email</th>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider">Role</th>
+                              <th className="px-6 py-3.5 font-semibold text-xs uppercase tracking-wider text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--brand-border-light)]">
+                            {loadingTeam ? (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-8 text-center">
+                                  <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-blue)] mx-auto" />
+                                </td>
+                              </tr>
+                            ) : invitations.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="px-6 py-8 text-center text-[var(--brand-muted)]">
+                                  No pending invitations.
+                                </td>
+                              </tr>
+                            ) : (
+                              invitations.map((invite) => (
+                                <tr key={invite.id} className="hover:bg-[var(--brand-bg)]/30 transition-colors">
+                                  <td className="px-6 py-4 font-medium text-slate-900">{invite.displayName}</td>
+                                  <td className="px-6 py-4 text-slate-600">{invite.email}</td>
+                                  <td className="px-6 py-4">
+                                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-100 uppercase tracking-wider">
+                                      {invite.role}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <button
+                                      onClick={() => handleRevokeInvite(invite.id)}
+                                      className="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors"
+                                    >
+                                      Revoke
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -479,6 +754,94 @@ export default function SettingsPage() {
         onConfirm={handleSeedDemo}
         onCancel={() => setSeedConfirm(false)}
       />
+
+      {/* Remove Member Confirmation */}
+      <ConfirmModal
+        isOpen={!!memberToRemove}
+        title="Remove Team Member"
+        message="Are you sure you want to remove this team member? They will instantly lose all access to this church dashboard."
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={() => {
+          if (memberToRemove) {
+            handleRemoveMember(memberToRemove);
+            setMemberToRemove(null);
+          }
+        }}
+        onCancel={() => setMemberToRemove(null)}
+      />
+
+      {/* Invite Member Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !inviting && setShowInviteModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10 scale-in border border-[var(--brand-border)]">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-[var(--brand-navy)]">Invite Team Member</h2>
+              <button onClick={() => !inviting && setShowInviteModal(false)} className="p-2 hover:bg-[var(--brand-bg)] rounded-lg transition-colors">
+                <X className="w-5 h-5 text-[var(--brand-muted)]" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-[var(--brand-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-blue)]/20 focus:border-[var(--brand-blue)] transition-all"
+                  placeholder="e.g., Brother Jude"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-[var(--brand-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-blue)]/20 focus:border-[var(--brand-blue)] transition-all"
+                  placeholder="e.g., jude@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Dashboard Role</label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  className="w-full px-3.5 py-2.5 border border-[var(--brand-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-blue)]/20 focus:border-[var(--brand-blue)] bg-white appearance-none cursor-pointer"
+                >
+                  <option value="admin">Admin (Full Access)</option>
+                  <option value="editor">Editor (Ushers, Secretary, Departments)</option>
+                  <option value="finance">Finance (Finance Department only)</option>
+                  <option value="viewer">Viewer (Read-only dashboard/reports)</option>
+                </select>
+                <p className="text-[11px] text-[var(--brand-muted)] mt-2 leading-relaxed">
+                  {inviteRole === "admin" && "Has access to modify settings and view/edit all data, but cannot invite team members."}
+                  {inviteRole === "editor" && "Can view and edit members, attendance, newcomers, tasks, departments, and messages. Cannot see finances."}
+                  {inviteRole === "finance" && "Can view and edit finances/transactions. Can view members and departments. Cannot access other sections."}
+                  {inviteRole === "viewer" && "Has read-only view of dashboard statistics, members list, and reports."}
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowInviteModal(false)}
+                  disabled={inviting}
+                  className="flex-1 px-4 py-2.5 border border-[var(--brand-border)] rounded-xl text-sm font-medium text-slate-700 hover:bg-[var(--brand-bg)] transition-colors focus-ring"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleInviteUser}
+                  disabled={inviting}
+                  className="flex-1 px-4 py-2.5 bg-[var(--brand-blue)] text-white rounded-xl text-sm font-semibold hover:bg-[var(--brand-blue-dark)] transition-all disabled:opacity-50 focus-ring shadow-sm"
+                >
+                  {inviting ? "Inviting..." : "Send Invite"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

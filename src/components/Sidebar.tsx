@@ -18,18 +18,21 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
+  DollarSign,
 } from "lucide-react";
 import { useState } from "react";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Getting Started", href: "/getting-started", icon: BookOpen },
   { name: "Members", href: "/members", icon: Users },
   { name: "Newcomers", href: "/newcomers", icon: UserPlus },
   { name: "Attendance", href: "/attendance", icon: CalendarCheck },
   { name: "Follow-Up", href: "/follow-up", icon: ClipboardList },
   { name: "Departments", href: "/departments", icon: Building2 },
   { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Finances", href: "/finances", icon: Wallet },
+  { name: "Finances", href: "/finances", icon: DollarSign },
   { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "AI Assistant", href: "/ai-assistant", icon: Sparkles },

@@ -1,5 +1,3 @@
-const TERMII_API_KEY = process.env.TERMII_API_KEY || "";
-
 export async function sendSms({
   to,
   message,
@@ -7,7 +5,8 @@ export async function sendSms({
   to: string;
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!TERMII_API_KEY) {
+  const apiKey = process.env.TERMII_API_KEY || "";
+  if (!apiKey) {
     return { success: false, error: "Termii API key not configured" };
   }
 
@@ -18,7 +17,7 @@ export async function sendSms({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        api_key: TERMII_API_KEY,
+        api_key: apiKey,
         to,
         from: "ChurchAssist",
         sms: message,

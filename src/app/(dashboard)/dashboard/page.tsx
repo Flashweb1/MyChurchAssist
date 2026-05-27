@@ -15,7 +15,7 @@ import {
   Activity,
   MessageSquare,
 } from "lucide-react";
-import { collection, getDocs, query, orderBy, limit, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, doc, getDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Member, Transaction, type Message, type Wallet } from "@/lib/types";
 import AttendanceChart from "@/components/AttendanceChart";
@@ -39,7 +39,7 @@ interface AIInsight {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, churchId } = useAuth();
   const { settings } = useSettings();
   const [stats, setStats] = useState<DashboardStats>({
     totalMembers: 0,
@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [financialSummary, setFinancialSummary] = useState({ income: 0, expenses: 0, net: 0 });
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [recentMessages, setRecentMessages] = useState<Message[]>([]);
+  const [indexErrors, setIndexErrors] = useState<string[]>([]);
 
   const firstName = user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "Admin";
 
@@ -66,19 +67,69 @@ export default function DashboardPage() {
   };
 
   const fetchDashboardData = async () => {
+    if (!churchId) return;
     try {
       setLoading(true);
+      setIndexErrors([]);
 
-      const [membersSnapshot, followUpsSnap, recentSnapshot, transactionsSnapshot, walletSnap, messagesSnap] = await Promise.all([
-        getDocs(collection(db, "members")),
-        getDocs(collection(db, "followups")),
-        getDocs(query(collection(db, "members"), orderBy("createdAt", "desc"), limit(5))),
-        getDocs(query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(200))),
-        getDoc(doc(db, "wallets", user?.uid || "demo-church")),
-        getDocs(query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(5))),
-      ]);
+      let membersSnapshot = null;
+      let followUpsSnap = null;
+      let recentSnapshot = null;
+      let transactionsSnapshot = null;
+      let walletSnap = null;
+      let messagesSnap = null;
 
-      const membersList = membersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Member));
+      const missingIndexes: string[] = [];
+
+      try {
+        membersSnapshot = await getDocs(query(collection(db, "members"), where("churchId", "==", churchId)));
+      } catch (err: any) {
+        console.warn("Failed to fetch members:", err);
+      }
+
+      try {
+        followUpsSnap = await getDocs(query(collection(db, "followups"), where("churchId", "==", churchId)));
+      } catch (err: any) {
+        console.warn("Failed to fetch followups:", err);
+      }
+
+      try {
+        recentSnapshot = await getDocs(query(collection(db, "members"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(5)));
+      } catch (err: any) {
+        console.warn("Failed to fetch recent members (may need index):", err);
+        const match = err.message?.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+        if (match && !missingIndexes.includes(match[0])) missingIndexes.push(match[0]);
+      }
+
+      try {
+        transactionsSnapshot = await getDocs(query(collection(db, "transactions"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(200)));
+      } catch (err: any) {
+        console.warn("Failed to fetch transactions (may need index):", err);
+        const match = err.message?.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+        if (match && !missingIndexes.includes(match[0])) missingIndexes.push(match[0]);
+      }
+
+      try {
+        walletSnap = await getDoc(doc(db, "wallets", churchId));
+      } catch (err: any) {
+        console.warn("Failed to fetch wallet:", err);
+      }
+
+      try {
+        messagesSnap = await getDocs(query(collection(db, "messages"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(5)));
+      } catch (err: any) {
+        console.warn("Failed to fetch messages (may need index):", err);
+        const match = err.message?.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+        if (match && !missingIndexes.includes(match[0])) missingIndexes.push(match[0]);
+      }
+
+      if (missingIndexes.length > 0) {
+        setIndexErrors(missingIndexes);
+      }
+
+      const membersList = membersSnapshot
+        ? membersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Member))
+        : [];
       const now = new Date();
       const yearStart = new Date(now.getFullYear(), 0, 1);
 
@@ -91,22 +142,40 @@ export default function DashboardPage() {
         return created >= yearStart;
       }).length;
 
-      const pending = followUpsSnap.docs.filter((d) => d.data().status === "Pending").length;
+      const pending = followUpsSnap
+        ? followUpsSnap.docs.filter((d) => d.data().status === "Pending").length
+        : 0;
       setPendingFollowUps(pending);
 
-      const txList = transactionsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction));
+      const txList = transactionsSnapshot
+        ? transactionsSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Transaction))
+        : [];
       const income = txList.filter((t) => t.type === "Income").reduce((s, t) => s + t.amount, 0);
       const expenses = txList.filter((t) => t.type === "Expense").reduce((s, t) => s + t.amount, 0);
       setFinancialSummary({ income, expenses, net: income - expenses });
 
-      if (walletSnap.exists()) {
+      if (walletSnap && walletSnap.exists()) {
         setWallet(walletSnap.data() as Wallet);
       }
-      setRecentMessages(messagesSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Message)));
+      setRecentMessages(
+        messagesSnap
+          ? messagesSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Message))
+          : []
+      );
 
       setStats({ totalMembers: membersList.length, activeWorkers, joinedThisYear, attendanceTrend: 5.2 });
       setLastUpdated(new Date());
-      setRecentMembers(recentSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Member)));
+
+      const recentMembersList = recentSnapshot
+        ? recentSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Member))
+        : [...membersList].sort((a, b) => {
+            const tsA = a.createdAt as unknown as { toDate?: () => Date };
+            const tsB = b.createdAt as unknown as { toDate?: () => Date };
+            const dateA = tsA?.toDate ? tsA.toDate() : new Date(a.createdAt);
+            const dateB = tsB?.toDate ? tsB.toDate() : new Date(b.createdAt);
+            return dateB.getTime() - dateA.getTime();
+          }).slice(0, 5);
+      setRecentMembers(recentMembersList);
 
       const builtInsights: AIInsight[] = [];
       if (membersList.length > 0) {
@@ -136,8 +205,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (churchId) {
+      fetchDashboardData();
+    }
+  }, [churchId]);
 
   const statCards = [
     { title: "Total Members", value: stats.totalMembers.toLocaleString(), icon: Users, gradient: "from-blue-500 to-blue-600", bgLight: "bg-blue-50", change: "+12%", up: true },
@@ -167,6 +238,32 @@ export default function DashboardPage() {
           <span className="text-sm font-medium">Refresh</span>
         </button>
       </div>
+
+      {/* Index Errors Banner (Only visible during local development) */}
+      {process.env.NODE_ENV === "development" && indexErrors.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-amber-900 shadow-sm space-y-3">
+          <div className="flex items-center gap-2 font-bold text-amber-800">
+            <AlertTriangle className="w-5.5 h-5.5" />
+            <span>Resilient Mode: Some features need composite indexes in Firestore</span>
+          </div>
+          <p className="text-sm">
+            To view sorted lists (like recent members, financial histories, or announcements), please create the required indexes in your Firebase Console. Other parts of your dashboard (like total counts, wallet balances, and setup steps) are fully operational:
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+            {indexErrors.map((url, i) => (
+              <a
+                key={i}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--brand-blue)] hover:underline bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm"
+              >
+                Create Composite Index {i + 1} ↗
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* AI Insights Banner */}
       {insights.length > 0 && (

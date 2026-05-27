@@ -72,7 +72,7 @@ export default function LandingPage() {
               {/* Action Buttons */}
               <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-4 pt-2 fade-in-up" style={{ animationDelay: "0.2s" }}>
                 <Link
-                  href="/signup"
+                  href="/login?demo=true"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-blue-dark)] px-8 py-4 text-base font-bold text-white shadow-[0_8px_25px_rgba(10,102,255,0.25)] hover:shadow-[0_12px_35px_rgba(10,102,255,0.35)] hover:-translate-y-0.5 transition-all duration-300 btn-ripple"
                 >
                   Try demo free
@@ -96,7 +96,13 @@ export default function LandingPage() {
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80"
                   ].map((src, i) => (
                     <div key={i} className="relative h-9 w-9 rounded-full border-2 border-white overflow-hidden bg-slate-100 shadow-sm">
-                      <img src={src} alt="Church Leader User Avatar" className="h-full w-full object-cover" />
+                      <Image 
+                        src={src} 
+                        alt={`Church Leader User ${i + 1}`} 
+                        fill
+                        sizes="36px"
+                        className="object-cover"
+                      />
                     </div>
                   ))}
                 </div>
@@ -154,10 +160,16 @@ export default function LandingPage() {
                   I detected 3 newcomers from Sunday service who haven't been contacted. Draft welcome SMS?
                 </p>
                 <div className="flex items-center gap-2">
-                  <button className="flex-1 bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-light)] text-white font-semibold text-[10px] py-1.5 px-3 rounded-lg transition-all shadow-md shadow-[var(--brand-blue)]/20 flex items-center justify-center gap-1 cursor-pointer">
+                  <button 
+                    type="button"
+                    className="flex-1 bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-light)] text-white font-semibold text-[10px] py-1.5 px-3 rounded-lg transition-all shadow-md shadow-[var(--brand-blue)]/20 flex items-center justify-center gap-1 cursor-pointer"
+                  >
                     <Send className="w-2.5 h-2.5" /> Approve & Send
                   </button>
-                  <button className="bg-slate-800 hover:bg-slate-700 text-slate-400 py-1.5 px-2 rounded-lg text-[10px] transition-all border border-slate-700">
+                  <button 
+                    type="button"
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-400 py-1.5 px-2 rounded-lg text-[10px] transition-all border border-slate-700"
+                  >
                     Dismiss
                   </button>
                 </div>

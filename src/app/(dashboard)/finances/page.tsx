@@ -13,12 +13,13 @@ import {
   X,
   Receipt,
 } from "lucide-react";
-import { collection, getDocs, query, orderBy, limit, addDoc } from "firebase/firestore";
+import { collection, getDocs, query, orderBy, limit, addDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Transaction, TransactionCategory, TransactionType, PaymentMethod } from "@/lib/types";
 import { toast } from "sonner";
 import { useSettings } from "@/lib/settings-context";
 import { formatCurrency } from "@/lib/currency";
+import { useAuth } from "@/lib/auth";
 
 const INCOME_CATEGORIES: TransactionCategory[] = [
   "Tithe", "Offering", "Donation", "Miscellaneous Income",
@@ -40,6 +41,7 @@ const emptyForm = {
 };
 
 export default function FinancesPage() {
+  const { churchId } = useAuth();
   const { settings } = useSettings();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,9 +52,10 @@ export default function FinancesPage() {
   const [form, setForm] = useState(emptyForm);
 
   const fetchTransactions = async () => {
+    if (!churchId) return;
     setLoading(true);
     try {
-      const q = query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(200));
+      const q = query(collection(db, "transactions"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(200));
       const snap = await getDocs(q);
       setTransactions(snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Transaction[]);
     } catch (error) {
@@ -62,7 +65,11 @@ export default function FinancesPage() {
     }
   };
 
-  useEffect(() => { fetchTransactions(); }, []);
+  useEffect(() => {
+    if (churchId) {
+      fetchTransactions();
+    }
+  }, [churchId]);
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -93,8 +100,10 @@ export default function FinancesPage() {
     }
     setSaving(true);
     try {
+      if (!churchId) return;
       await addDoc(collection(db, "transactions"), {
         ...form,
+        churchId,
         amount: form.amount,
         createdAt: new Date(),
       });

@@ -24,7 +24,24 @@ service cloud.firestore {
 
     // Users
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || resource.data.churchId == userChurchId());
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (
+        (resource.data.churchId == userChurchId() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "super_admin") ||
+        (request.auth.uid == userId && 
+         (!("role" in resource.data) || request.resource.data.role == resource.data.role) && 
+         (!("churchId" in resource.data) || request.resource.data.churchId == resource.data.churchId) &&
+         (!("email" in resource.data) || request.resource.data.email == resource.data.email))
+      );
+      allow delete: if isAuthenticated() && resource.data.churchId == userChurchId() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "super_admin";
+    }
+
+    // Invitations
+    match /invitations/{inviteId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.churchId == userChurchId() || request.auth.token.email == resource.data.email);
+      allow create: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "super_admin";
+      allow update: if isAuthenticated() && (resource.data.churchId == userChurchId() || request.auth.token.email == resource.data.email);
+      allow delete: if isAuthenticated() && resource.data.churchId == userChurchId();
     }
 
     // Secure Data Collections by ChurchId
@@ -80,12 +97,16 @@ service cloud.firestore {
     // Wallets
     match /wallets/{docId} {
       allow read: if isSameChurch(resource.data);
-      allow write: if isSameChurch(resource.data);
+      allow create: if isSameChurch(request.resource.data);
+      allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
+      allow delete: if isSameChurch(resource.data);
     }
 
     match /wallet_transactions/{txId} {
       allow read: if isSameChurch(resource.data);
-      allow write: if isSameChurch(resource.data);
+      allow create: if isSameChurch(request.resource.data);
+      allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
+      allow delete: if isSameChurch(resource.data);
     }
 
     match /message_deliveries/{deliveryId} {

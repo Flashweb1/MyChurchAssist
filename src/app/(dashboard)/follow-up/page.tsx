@@ -27,11 +27,13 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { FollowUpTask } from "@/lib/types";
 import ConfirmModal from "@/components/ConfirmModal";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 const TASK_TYPES: FollowUpTask["type"][] = ["Newcomer Follow-Up", "Prayer Request", "Hospital Visit", "Discipleship", "General"];
 const TASK_STATUSES: FollowUpTask["status"][] = ["Pending", "In Progress", "Completed", "Overdue"];
@@ -48,6 +50,7 @@ const defaultFormData = {
 };
 
 export default function FollowUpPage() {
+  const { churchId } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tasks, setTasks] = useState<FollowUpTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,8 +68,9 @@ export default function FollowUpPage() {
   });
 
   const fetchTasks = async () => {
+    if (!churchId) return;
     try {
-      const q = query(collection(db, "followups"), orderBy("createdAt", "desc"), limit(500));
+      const q = query(collection(db, "followups"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(500));
       const snapshot = await getDocs(q);
       setTasks(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as FollowUpTask[]);
     } catch (error) {
@@ -77,7 +81,11 @@ export default function FollowUpPage() {
     }
   };
 
-  useEffect(() => { fetchTasks(); }, []);
+  useEffect(() => {
+    if (churchId) {
+      fetchTasks();
+    }
+  }, [churchId]);
   useEffect(() => { setCurrentPage(1); }, [searchQuery, statusFilter, typeFilter]);
 
   const filtered = useMemo(() => {
@@ -127,8 +135,10 @@ export default function FollowUpPage() {
         });
         toast.success("Follow-up task updated successfully.");
       } else {
+        if (!churchId) return;
         await addDoc(collection(db, "followups"), {
           ...formData,
+          churchId,
           createdAt: new Date(),
         });
         toast.success("Follow-up task created successfully.");

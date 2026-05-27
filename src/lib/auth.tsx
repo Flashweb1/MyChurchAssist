@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -44,24 +44,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [churchId, setChurchId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (uid: string) => {
+  const fetchProfile = useCallback(async (uid: string) => {
     try {
       const snap = await getDoc(doc(db, "users", uid));
       if (snap.exists()) {
         const profile = snap.data() as UserProfile;
         setUserProfile(profile);
         setChurchId(profile.churchId || uid);
+      } else {
+        setChurchId(uid);
       }
     } catch {
       // Profile not created yet (first signup)
+      setChurchId(uid);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
         document.cookie = "session=active; path=/; max-age=86400; SameSite=Lax";
+        setChurchId(user.uid);
         await fetchProfile(user.uid);
       } else {
         document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
@@ -71,27 +75,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
     return () => unsubscribe();
+  }, [fetchProfile]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  };
-
-  const signup = async (email: string, password: string) => {
+  const signup = useCallback(async (email: string, password: string) => {
     return createUserWithEmailAndPassword(auth, email, password);
-  };
+  }, []);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = useCallback(async () => {
     await signInWithPopup(auth, googleProvider);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await signOut(auth);
-  };
+  }, []);
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     if (user) await fetchProfile(user.uid);
-  };
+  }, [user, fetchProfile]);
 
   return (
     <AuthContext.Provider value={{ user, userProfile, churchId, loading, login, signup, loginWithGoogle, logout, refreshProfile }}>

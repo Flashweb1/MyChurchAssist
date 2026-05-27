@@ -15,7 +15,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<ChurchSettings | null>(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, loading, churchId } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -25,22 +25,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !churchId) {
+      console.log("[DashboardLayout] No user or churchId:", { user: !!user, churchId });
+      return;
+    }
     const load = async () => {
       try {
-        const snap = await getDoc(doc(db, "settings", "church"));
+        console.log("[DashboardLayout] Fetching settings for churchId:", churchId);
+        const snap = await getDoc(doc(db, "settings", churchId));
+        console.log("[DashboardLayout] Settings snap exists:", snap.exists(), "data:", snap.data());
         if (snap.exists() && snap.data()?.churchName) {
           setSettings(snap.data() as ChurchSettings);
           setSettingsLoaded(true);
         } else {
+          console.warn("[DashboardLayout] Settings empty or name missing, redirecting to onboarding");
           router.replace("/onboarding");
         }
-      } catch {
+      } catch (err) {
+        console.error("[DashboardLayout] Failed to load church settings:", err);
         router.replace("/onboarding");
       }
     };
     load();
-  }, [user, router]);
+  }, [user, churchId, router]);
 
   if (loading || !settingsLoaded) {
     return (

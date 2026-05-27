@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { collection, addDoc, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, orderBy, limit, where, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth";
 import { Message } from "@/lib/types";
 import {
   MessageSquare,
@@ -65,6 +66,7 @@ const CHANNEL_COSTS: Record<string, number> = {
 };
 
 export default function MessagesPage() {
+  const { churchId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -72,9 +74,10 @@ export default function MessagesPage() {
   const [form, setForm] = useState(emptyForm);
 
   const fetchMessages = async () => {
+    if (!churchId) return;
     setLoading(true);
     try {
-      const q = query(collection(db, "messages"), orderBy("createdAt", "desc"), limit(200));
+      const q = query(collection(db, "messages"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(200));
       const snap = await getDocs(q);
       setMessages(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Message)));
     } catch {
@@ -85,22 +88,58 @@ export default function MessagesPage() {
   };
 
   useEffect(() => {
-    fetchMessages();
-  }, []);
+    if (churchId) {
+      fetchMessages();
+    }
+  }, [churchId]);
 
   const handleSend = async (status: "Draft" | "Sent") => {
     if (!form.title.trim() || !form.content.trim()) {
       toast.error("Title and content are required.");
       return;
     }
+    if (status === "Sent" && form.channels.length === 0) {
+      toast.error("Please select at least one delivery channel.");
+      return;
+    }
     setSaving(true);
     try {
-      await addDoc(collection(db, "messages"), {
+      if (!churchId) return;
+      const docRef = await addDoc(collection(db, "messages"), {
         ...form,
-        status,
+        churchId,
+        status: status === "Sent" ? "Sending..." : "Draft",
         createdAt: new Date(),
       });
-      toast.success(status === "Sent" ? "Message sent successfully!" : "Draft saved.");
+
+      if (status === "Sent") {
+        try {
+          const res = await fetch("/api/messages/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              messageId: docRef.id,
+              churchId,
+              channels: form.channels,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            await updateDoc(doc(db, "messages", docRef.id), { status: "Draft" });
+            throw new Error(data.error || "Failed to deliver messages");
+          }
+          toast.success(`Messages delivered! Sent: ${data.sent}, Failed: ${data.failed}`);
+        } catch (error: any) {
+          toast.error(error.message || "Failed to process delivery backend.");
+          setShowModal(false);
+          setForm(emptyForm);
+          fetchMessages();
+          return;
+        }
+      } else {
+        toast.success("Draft saved successfully.");
+      }
+
       setShowModal(false);
       setForm(emptyForm);
       fetchMessages();

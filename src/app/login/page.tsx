@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { seedDemoData } from "@/lib/demo-seed";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import Image from "next/image";
 import { Loader2, ArrowLeft, MailCheck } from "lucide-react";
 import Link from "next/link";
@@ -22,27 +22,37 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState("");
   const router = useRouter();
-  const { user, login, loginWithGoogle, signup, loading: authLoading } = useAuth();
-  const isDemoRef = useRef(false);
-  const demoSeededRef = useRef(false);
+  const { user, login, loginWithGoogle, logout, loading: authLoading, churchId } = useAuth();
 
-  // Handle navigation after auth state settles
   useEffect(() => {
-    if (!user || authLoading) return;
+    // Wait until Firebase has fully resolved auth state (including session restore from IndexedDB)
+    if (authLoading) return;
+    // No active session — stay on login page
+    if (!user) return;
 
-    if (isDemoRef.current && !demoSeededRef.current) {
-      // Demo flow: seed data then go to dashboard
-      demoSeededRef.current = true;
-      seedDemoData(user.displayName || "Demo Admin")
-        .catch((err) => console.error("Demo seed error:", err))
-        .then(() => new Promise((r) => setTimeout(r, 800))) // Wait for Firestore consistency
-        .finally(() => router.push("/dashboard"));
-      return;
-    }
+    const routeUser = async () => {
+      const targetId = churchId || user.uid;
+      try {
+        const snap = await getDoc(doc(db, "settings", targetId));
+        const onboarded = snap.exists() && !!snap.data()?.churchName?.trim();
 
-    // Normal flow: go to onboarding
-    router.push("/onboarding");
-  }, [user, authLoading, router]);
+        if (onboarded) {
+          // Fully set up — go to dashboard
+          router.replace("/dashboard");
+        } else {
+          // Active session exists but onboarding was never completed.
+          // The user explicitly visited /login, so sign them out silently
+          // so they can authenticate fresh instead of being sent to onboarding.
+          await logout();
+        }
+      } catch (err) {
+        // On Firestore error, sign out to be safe and let user log in again
+        console.error("Error checking onboarding status:", err);
+        await logout().catch(() => {});
+      }
+    };
+    routeUser();
+  }, [user, authLoading, churchId, router, logout]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,40 +84,25 @@ export default function LoginPage() {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setError("");
-    isDemoRef.current = true;
-    demoSeededRef.current = false;
-
-    const randomId = Math.floor(Math.random() * 100000);
-    const demoEmail = `demo_${randomId}@churchassist.app`;
-    const demoPass = "demo1234";
-
-    try {
-      await signup(demoEmail, demoPass);
-      // Auth state change triggers useEffect which seeds data and navigates
-    } catch {
-      // Fallback: try the standard demo account
-      try {
-        await login("demo@churchassist.app", "demo1234");
-        // Auth state change triggers useEffect which seeds data and navigates
-      } catch {
-        setError("Demo login failed. Please try again.");
-        isDemoRef.current = false;
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError("");
     try {
       await loginWithGoogle();
-    } catch {
-      setError("Google sign in failed. Please try again.");
+    } catch (err: unknown) {
+      console.error("Google sign-in error:", err);
+      const fbErr = err as { code?: string; message?: string };
+      
+      // Handle specific error codes
+      if (fbErr.code === "auth/popup-blocked") {
+        setError("Popup was blocked. Please allow popups and try again.");
+      } else if (fbErr.code === "auth/cancelled-popup-request") {
+        setError("Sign-in was cancelled.");
+      } else if (fbErr.code === "auth/popup-closed-by-user") {
+        setError("You closed the sign-in window.");
+      } else {
+        setError(fbErr.message || "Google sign in failed. Please try again.");
+      }
     } finally {
       setGoogleLoading(false);
     }
@@ -209,6 +204,20 @@ export default function LoginPage() {
     );
   }
 
+  // ── Auth loading screen (Firebase restoring session from IndexedDB) ─────────
+  // Show a spinner while Firebase is checking for a persisted session.
+  // This prevents the login form from flashing before the user gets redirected.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-[var(--brand-blue)]" />
+          <p className="text-slate-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   // ── Main Login view ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0B1120] flex items-center justify-center p-4">
@@ -259,11 +268,14 @@ export default function LoginPage() {
           {/* Demo Sign In Button */}
           <button
             type="button"
-            onClick={handleDemoLogin}
+            onClick={() => router.push("/demo")}
             disabled={loading || googleLoading}
             className="w-full flex items-center justify-center gap-3 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-2xl font-medium transition-colors mb-6 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Try Demo Account"}
+            <span className="flex items-center justify-center gap-3">
+              <Loader2 className="w-5 h-5 opacity-0" />
+              Try Demo Account
+            </span>
           </button>
 
           <div className="relative mb-6">

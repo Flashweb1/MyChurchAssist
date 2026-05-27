@@ -1,6 +1,82 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ExternalLink, Globe, Mail, Share2 } from "lucide-react";
+import { Mail } from "lucide-react";
+
+interface IconProps {
+  className?: string;
+}
+
+function FacebookIcon({ className }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
+function InstagramIcon({ className }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
+
+function LinkedinIcon({ className }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+      <rect width="4" height="12" x="2" y="9" />
+      <circle cx="4" cy="4" r="2" />
+    </svg>
+  );
+}
+
+function TiktokIcon({ className }: IconProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
 
 export default function PublicFooter() {
   return (
@@ -33,16 +109,19 @@ export default function PublicFooter() {
               Church Assist gives your church a modern, secure platform to manage members, attendance, giving, and follow-up without the clutter.
             </p>
             <div className="flex items-center gap-3">
-              <Link href="https://facebook.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white">
-                <Globe className="w-5 h-5" />
+              <Link href="https://linkedin.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="LinkedIn">
+                <LinkedinIcon className="w-5 h-5" />
               </Link>
-              <Link href="https://twitter.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white">
-                <Share2 className="w-5 h-5" />
+              <Link href="https://tiktok.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="TikTok">
+                <TiktokIcon className="w-5 h-5" />
               </Link>
-              <Link href="https://instagram.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white">
-                <ExternalLink className="w-5 h-5" />
+              <Link href="https://facebook.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Facebook">
+                <FacebookIcon className="w-5 h-5" />
               </Link>
-              <Link href="https://linkedin.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white">
+              <Link href="https://instagram.com" target="_blank" rel="noreferrer" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Instagram">
+                <InstagramIcon className="w-5 h-5" />
+              </Link>
+              <Link href="mailto:info@churchassist.app" className="h-10 w-10 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-300 transition hover:bg-slate-700 hover:text-white" aria-label="Email">
                 <Mail className="w-5 h-5" />
               </Link>
             </div>

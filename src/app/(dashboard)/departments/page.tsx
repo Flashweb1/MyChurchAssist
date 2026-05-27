@@ -23,11 +23,13 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Department } from "@/lib/types";
 import ConfirmModal from "@/components/ConfirmModal";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 const defaultFormData = {
   name: "",
@@ -38,6 +40,7 @@ const defaultFormData = {
 };
 
 export default function DepartmentsPage() {
+  const { churchId } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -52,8 +55,9 @@ export default function DepartmentsPage() {
   });
 
   const fetchDepartments = async () => {
+    if (!churchId) return;
     try {
-      const q = query(collection(db, "departments"), orderBy("createdAt", "desc"), limit(200));
+      const q = query(collection(db, "departments"), where("churchId", "==", churchId), orderBy("createdAt", "desc"), limit(200));
       const snapshot = await getDocs(q);
       setDepartments(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Department[]);
     } catch (error) {
@@ -64,7 +68,11 @@ export default function DepartmentsPage() {
     }
   };
 
-  useEffect(() => { fetchDepartments(); }, []);
+  useEffect(() => {
+    if (churchId) {
+      fetchDepartments();
+    }
+  }, [churchId]);
 
   const filtered = departments.filter((d) =>
     searchQuery === "" || d.name?.toLowerCase().includes(searchQuery.toLowerCase()) || d.head?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -77,7 +85,8 @@ export default function DepartmentsPage() {
       if (editingDept) {
         await updateDoc(doc(db, "departments", editingDept.id), { ...formData });
       } else {
-        await addDoc(collection(db, "departments"), { ...formData, createdAt: new Date() });
+        if (!churchId) return;
+        await addDoc(collection(db, "departments"), { ...formData, churchId, createdAt: new Date() });
       }
       setIsModalOpen(false);
       setFormData(defaultFormData);
