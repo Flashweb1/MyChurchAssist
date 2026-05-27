@@ -40,9 +40,7 @@ export default function SignupPage() {
           router.replace("/dashboard");
         } else {
           // Active session exists but onboarding was never completed.
-          // The user explicitly visited /signup, so sign them out silently
-          // so they can create a new account without being sent to onboarding.
-          await logout();
+          router.replace("/onboarding");
         }
       } catch (err) {
         console.error("Error checking onboarding status:", err);
@@ -115,6 +113,8 @@ export default function SignupPage() {
         setError("Sign-in was cancelled.");
       } else if (fbErr.code === "auth/popup-closed-by-user") {
         setError("You closed the sign-in window.");
+      } else if (fbErr.code === "auth/unauthorized-domain") {
+        setError("This domain is not authorized for Google Sign-in. Please contact the administrator.");
       } else {
         setError(fbErr.message || "Sign up failed. Please try again.");
       }
@@ -143,7 +143,14 @@ export default function SignupPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 mb-4">
-            <Image src="/logo-church-assist.png" alt="Church Assist" width={2000} height={581} className="h-10 w-auto" />
+            <Image 
+              src="/logo-church-assist.png" 
+              alt="Church Assist" 
+              width={2000} 
+              height={581} 
+              className="h-10 w-auto" 
+              priority
+            />
           </Link>
           <p className="text-[var(--brand-muted)]">Create your account to get started</p>
         </div>
