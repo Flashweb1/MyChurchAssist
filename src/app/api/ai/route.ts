@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { initAdmin, getAuth } from "@/lib/firebase-admin";
+import { aiChatSchema, validateRequest } from "@/lib/validation";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `You are Church Assist AI, a helpful pastoral and administrative assistant designed to help church leaders draft newsletters, brainstorm sermons, and manage their congregations effectively. Be encouraging, professional, and concise. Always ground your responses in Christian values and biblical wisdom where appropriate.`;
 
@@ -45,10 +48,35 @@ async function tryModel(config: ModelConfig, messages: { role: string; content: 
 
 export async function POST(req: Request) {
   try {
-    const { prompt, messages } = await req.json();
-    if (!prompt || typeof prompt !== "string") {
-      return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+    initAdmin();
+    const auth = getAuth();
+    
+    // Verify Firebase ID token
+    const token = req.headers.get("Authorization")?.split("Bearer ")[1];
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
+    const decodedToken = await auth.verifyIdToken(token);
+
+    // Rate limit: 20 AI requests per user per minute
+    const rlKey = getRateLimitKey(req, "ai", decodedToken.uid);
+    const rl = rateLimit(rlKey, { limit: 20, windowSec: 60 });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Too many requests. Please wait ${rl.retryAfter}s before trying again.` },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      );
+    }
+    
+    // Validate request body
+    const body = await req.json();
+    const validation = validateRequest(aiChatSchema, body);
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { prompt, messages } = validation.data;
 
     const chatMessages = buildMessages(prompt, messages);
     const openRouterApiKey = process.env.OPENROUTER_API_KEY;

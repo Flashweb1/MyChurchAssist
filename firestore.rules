@@ -17,9 +17,16 @@ service cloud.firestore {
       return isAuthenticated() && resourceData.churchId == userChurchId();
     }
 
-    // Church settings
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == "super_admin" || 
+        request.auth.token.role == "admin"
+      );
+    }
+
+    // Church settings (isolated by churchId)
     match /settings/{document} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAuthenticated() && document == userChurchId();
     }
 
     // Users
@@ -44,21 +51,24 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.churchId == userChurchId();
     }
 
-    // Secure Data Collections by ChurchId
+    // Members (with soft delete support)
     match /members/{docId} {
-      allow read: if isSameChurch(resource.data);
+      // Admins can view all including archived; regular users only see non-deleted
+      allow read: if isSameChurch(resource.data) && (isAdmin() || resource.data.deletedAt == null);
       allow create: if isSameChurch(request.resource.data);
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
       allow delete: if isSameChurch(resource.data);
     }
 
+    // Newcomers (with soft delete support)
     match /newcomers/{docId} {
-      allow read: if isSameChurch(resource.data);
+      allow read: if isSameChurch(resource.data) && (isAdmin() || resource.data.deletedAt == null);
       allow create: if isSameChurch(request.resource.data);
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
       allow delete: if isSameChurch(resource.data);
     }
 
+    // Attendance - no soft delete
     match /attendance/{docId} {
       allow read: if isSameChurch(resource.data);
       allow create: if isSameChurch(request.resource.data);
@@ -66,29 +76,33 @@ service cloud.firestore {
       allow delete: if isSameChurch(resource.data);
     }
 
+    // Departments (with soft delete support)
     match /departments/{docId} {
-      allow read: if isSameChurch(resource.data);
+      allow read: if isSameChurch(resource.data) && (isAdmin() || resource.data.deletedAt == null);
       allow create: if isSameChurch(request.resource.data);
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
       allow delete: if isSameChurch(resource.data);
     }
 
+    // Transactions (with soft delete support)
     match /transactions/{txId} {
-      allow read: if isSameChurch(resource.data);
+      allow read: if isSameChurch(resource.data) && (isAdmin() || resource.data.deletedAt == null);
       allow create: if isSameChurch(request.resource.data);
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
       allow delete: if isSameChurch(resource.data);
     }
 
+    // Follow-ups (with soft delete support)
     match /followups/{taskId} {
-      allow read: if isSameChurch(resource.data);
+      allow read: if isSameChurch(resource.data) && (isAdmin() || resource.data.deletedAt == null);
       allow create: if isSameChurch(request.resource.data);
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
       allow delete: if isSameChurch(resource.data);
     }
 
+    // Messages (with soft delete support)
     match /messages/{msgId} {
-      allow read: if isSameChurch(resource.data);
+      allow read: if isSameChurch(resource.data) && (isAdmin() || resource.data.deletedAt == null);
       allow create: if isSameChurch(request.resource.data);
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
       allow delete: if isSameChurch(resource.data);
@@ -115,8 +129,15 @@ service cloud.firestore {
       allow update: if isSameChurch(resource.data) && isSameChurch(request.resource.data);
     }
 
+    // Audit logs (admins only)
+    match /audit_logs/{logId} {
+      allow read: if isAuthenticated() && resource.data.churchId == userChurchId() && isAdmin();
+      allow create: if isAuthenticated();
+    }
+
+    // Birthday config (isolated by churchId)
     match /birthday_config/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAuthenticated() && docId == userChurchId();
     }
 
     // Deny everything else

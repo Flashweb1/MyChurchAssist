@@ -1,10 +1,27 @@
 import { NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebase-admin";
 import crypto from "crypto";
+import { z } from "zod";
+
+// Validate webhook event structure
+const webhookEventSchema = z.object({
+  event: z.string(),
+  data: z.object({
+    metadata: z.object({ churchId: z.string() }).optional(),
+    reference: z.string(),
+    amount: z.number(),
+  }).optional(),
+});
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    
+    // Validate webhook payload
+    const validation = webhookEventSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: "Invalid webhook payload" }, { status: 400 });
+    }
     const secret = process.env.PAYSTACK_SECRET_KEY || "";
 
     const hash = crypto.createHmac("sha512", secret).update(JSON.stringify(body)).digest("hex");

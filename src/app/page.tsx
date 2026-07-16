@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BarChart3, CalendarCheck, MessageCircle, ShieldCheck, Sparkles, Users, Send, CheckCircle, TrendingUp, Bot, Brain } from "lucide-react";
 import PublicNavbar from "@/components/PublicNavbar";
 import PublicFooter from "@/components/PublicFooter";
+import { useDarkMode } from "@/lib/dark-mode-context";
 
 const metrics = [
   { label: "Hours saved / week", value: "10h+" },
@@ -29,19 +32,18 @@ const quickFeatures = [
 ];
 
 export default function LandingPage() {
+  const { darkMode } = useDarkMode();
   return (
-    <div className="min-h-screen bg-[var(--brand-bg)] selection:bg-[var(--brand-blue)]/20 overflow-x-hidden">
+    <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-[var(--brand-bg)]'} selection:bg-[var(--brand-blue)]/20 overflow-x-hidden`}>
       <PublicNavbar />
 
       <main>
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden bg-[radial-gradient(circle_at_70%_20%,_rgba(10,102,255,0.06),transparent_45%),radial-gradient(circle_at_20%_60%,rgba(124,58,237,0.06),transparent_40%)]">
-          {/* Drifting Aurora Glowing Blobs */}
-          <div className="absolute top-[10%] right-[10%] w-[350px] h-[350px] rounded-full bg-gradient-to-tr from-[var(--brand-blue)]/10 to-purple-500/10 blur-[80px] pointer-events-none animate-aurora-drift" />
-          <div className="absolute bottom-[20%] left-[5%] w-[300px] h-[300px] rounded-full bg-gradient-to-br from-emerald-500/8 to-teal-500/8 blur-[70px] pointer-events-none animate-aurora-drift" style={{ animationDelay: "-5s" }} />
-
-          {/* Subtle Dot Grid Background */}
-          <div className="absolute inset-0 pattern-dots opacity-20 [mask-image:radial-gradient(ellipse_at_center,black_50%,transparent_90%)] pointer-events-none" />
+        <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+          {/* Clean subtle grid pattern only — no blobs */}
+          <div className="absolute inset-0 pattern-dots opacity-[0.15] pointer-events-none" />
+          {/* Single very soft top-centre light — like a studio light, not aurora */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-indigo-500/8 blur-[120px] pointer-events-none" />
 
           <div className="max-w-7xl mx-auto relative z-10 grid gap-16 lg:grid-cols-[1.15fr_0.85fr] items-center pt-8">
             
@@ -122,9 +124,6 @@ export default function LandingPage() {
 
             {/* Right Column: Layered 3D Floating Collage */}
             <div className="relative w-full aspect-[4/3] flex items-center justify-center fade-in-up mt-8 lg:mt-0" style={{ animationDelay: "0.3s" }}>
-              
-              {/* Backglow behind the mockup */}
-              <div className="absolute inset-x-8 bottom-8 top-12 rounded-[2.5rem] bg-gradient-to-tr from-[var(--brand-blue)]/20 via-purple-500/20 to-emerald-500/10 blur-3xl -z-10" />
 
               {/* Main Dashboard Preview Card */}
               <div className="w-[90%] md:w-[85%] aspect-[16/10] rounded-2xl border border-white/60 bg-white/30 p-2 sm:p-3 backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02] animate-float-slow">
@@ -275,9 +274,8 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Snapshot Dashboard Mockup (Live snapshots) */}
-              <div className="rounded-[2.5rem] border border-slate-200 bg-white/95 p-8 shadow-2xl overflow-hidden relative">
-                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[var(--brand-blue)]/15 to-transparent" />
+              {/* Snapshot Dashboard Mockup */}
+              <div className="rounded-[2.5rem] border border-slate-200 bg-white/95 p-8 shadow-xl overflow-hidden">
                 <div className="relative">
                   <div className="rounded-[2rem] bg-slate-950 p-8 text-white shadow-2xl">
                     <div className="mb-6 flex items-center justify-between">
@@ -394,18 +392,18 @@ export default function LandingPage() {
 
         {/* CTA Banner */}
         <section className="px-4 sm:px-6 lg:px-8 pb-28">
-          <div className="max-w-6xl mx-auto rounded-[2.5rem] bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-green)] p-10 text-white shadow-2xl">
+          <div className="max-w-6xl mx-auto rounded-[2.5rem] bg-slate-900 border border-slate-800 p-10 text-white shadow-xl">
             <div className="grid gap-8 lg:grid-cols-[2fr_1fr] items-center">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-slate-200/80 mb-4">Ready to automate your ministry?</p>
-                <h2 className="text-4xl font-bold leading-tight">Start organizing operations with a fresh, AI-powered platform.</h2>
-                <p className="mt-6 text-lg text-slate-200/95 max-w-2xl">No setup complexity, no manual overhead. Just one beautifully designed, intelligent system for your whole church.</p>
+                <p className="text-sm uppercase tracking-[0.3em] text-slate-400 mb-4">Ready to automate your ministry?</p>
+                <h2 className="text-4xl font-bold leading-tight text-white">Start organizing operations with a fresh, AI-powered platform.</h2>
+                <p className="mt-6 text-lg text-slate-400 max-w-2xl">No setup complexity, no manual overhead. Just one beautifully designed, intelligent system for your whole church.</p>
               </div>
               <div className="flex flex-col gap-4">
-                <Link href="/signup" className="inline-flex items-center justify-center rounded-3xl bg-white px-8 py-4 text-lg font-bold text-[var(--brand-blue)] shadow-[0_18px_45px_rgba(255,255,255,0.24)]">
+                <Link href="/signup" className="inline-flex items-center justify-center rounded-3xl bg-indigo-600 hover:bg-indigo-500 px-8 py-4 text-lg font-bold text-white transition-all shadow-lg shadow-indigo-500/20 hover:-translate-y-0.5">
                   Start free trial
                 </Link>
-                <Link href="/pricing" className="inline-flex items-center justify-center rounded-3xl border border-white/60 px-8 py-4 text-lg font-semibold text-white hover:bg-white/10 transition-all">
+                <Link href="/pricing" className="inline-flex items-center justify-center rounded-3xl border border-slate-700 px-8 py-4 text-lg font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all">
                   View plans
                 </Link>
               </div>

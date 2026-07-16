@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Mail } from "lucide-react";
@@ -80,8 +82,7 @@ function TiktokIcon({ className }: IconProps) {
 
 export default function PublicFooter() {
   return (
-    <footer className="bg-slate-950 text-slate-200 relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_top,_rgba(10,102,255,0.18),transparent_60%)] pointer-events-none" />
+    <footer className="bg-slate-950 text-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="rounded-[2rem] border border-white/10 bg-slate-900/95 p-10 shadow-2xl shadow-slate-950/30 mb-12">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">

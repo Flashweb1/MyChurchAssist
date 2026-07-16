@@ -2,12 +2,28 @@
 
 :root {
   color-scheme: light;
-  --brand-blue: #0A66FF;
-  --brand-blue-light: #3B82F6;
-  --brand-blue-dark: #0052CC;
-  --brand-green: #22C55E;
-  --brand-green-light: #4ADE80;
-  --brand-green-dark: #16A34A;
+  
+  /* Premium Primary Colors - Trustworthy & Sophisticated */
+  --brand-primary: #4F46E5;
+  --brand-primary-light: #818CF8;
+  --brand-primary-dark: #3730A3;
+  --brand-primary-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  
+  /* Accent Colors for Vitality & Growth */
+  --brand-accent: #10B981;
+  --brand-accent-light: #34D399;
+  --brand-accent-dark: #059669;
+  
+  /* Secondary Accents */
+  --brand-amber: #F59E0B;
+  --brand-amber-light: #FBBF24;
+  --brand-red: #EF4444;
+  --brand-red-light: #F87171;
+  --brand-blue: #3B82F6;
+  --brand-purple: #8B5CF6;
+  --brand-pink: #EC4899;
+  
+  /* Neutral System - Premium Soft Palette */
   --brand-navy: #0F172A;
   --brand-navy-light: #1E293B;
   --brand-bg: #F8FAFC;
@@ -16,18 +32,7 @@
   --brand-border-light: #F1F5F9;
   --brand-muted: #64748B;
   --brand-muted-light: #94A3B8;
-  --brand-purple: #7C3AED;
-  --brand-purple-light: #A78BFA;
-  --brand-amber: #F59E0B;
-  --brand-amber-light: #FBBF24;
-  --brand-red: #EF4444;
-  --brand-red-light: #F87171;
-  --brand-cyan: #06B6D4;
-  --brand-cyan-light: #22D3EE;
-  --brand-teal: #14B8A6;
-  --brand-pink: #EC4899;
-  --brand-indigo: #6366F1;
-
+  
   --gray-50: #F8FAFC;
   --gray-100: #F1F5F9;
   --gray-200: #E2E8F0;
@@ -38,37 +43,78 @@
   --gray-700: #334155;
   --gray-800: #1E293B;
   --gray-900: #0F172A;
+}
 
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --shadow-glow-blue: 0 0 20px rgba(10, 102, 255, 0.3);
-  --shadow-glow-green: 0 0 20px rgba(34, 197, 94, 0.3);
-  --shadow-glow-purple: 0 0 20px rgba(124, 58, 237, 0.3);
+.dark {
+  color-scheme: dark;
+  
+  /* Neutral System - Dark Mode */
+  --brand-navy: #F8FAFC;
+  --brand-navy-light: #E2E8F0;
+  --brand-bg: #0F172A;
+  --brand-surface: #1E293B;
+  --brand-border: #334155;
+  --brand-border-light: #1E293B;
+  --brand-muted: #94A3B8;
+  --brand-muted-light: #64748B;
+  
+  --gray-50: #0F172A;
+  --gray-100: #1E293B;
+  --gray-200: #334155;
+  --gray-300: #475569;
+  --gray-400: #64748B;
+  --gray-500: #94A3B8;
+  --gray-600: #CBD5E1;
+  --gray-700: #E2E8F0;
+  --gray-800: #F1F5F9;
+  --gray-900: #F8FAFC;
 
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
-  --radius-3xl: 24px;
+  /* Premium Elevation System */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -2px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.12), 0 4px 6px -4px rgba(15, 23, 42, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.12);
+  --shadow-2xl: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  --shadow-glow-primary: 0 0 40px rgba(79, 70, 229, 0.35);
+  --shadow-glow-accent: 0 0 40px rgba(16, 185, 129, 0.35);
+  --shadow-glow-purple: 0 0 40px rgba(124, 58, 237, 0.35);
+
+  /* Premium Border Radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
   --radius-full: 9999px;
 
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Smooth Transitions */
+  --transition-fast: 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-base: 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --transition-slow: 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --gradient-primary: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-blue-dark) 100%);
-  --gradient-success: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
-  --gradient-warning: linear-gradient(135deg, var(--brand-amber) 0%, #D97706 100%);
-  --gradient-info: linear-gradient(135deg, var(--brand-cyan) 0%, var(--brand-blue) 100%);
-  --gradient-purple: linear-gradient(135deg, var(--brand-purple) 0%, var(--brand-pink) 100%);
-  --gradient-navy: linear-gradient(135deg, var(--brand-navy) 0%, var(--brand-navy-light) 100%);
+  /* Premium Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-accent-dark) 100%);
+  --gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  --gradient-warning: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  --gradient-info: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
+  --gradient-navy: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  --gradient-slate: linear-gradient(135deg, #475569 0%, #334155 100%);
+  --gradient-soft: linear-gradient(180deg, rgba(248, 250, 252, 0) 0%, rgba(248, 250, 252, 1) 100%);
+}
+
+/* Dark Mode Elevation System */
+.dark {
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
 html {
@@ -84,6 +130,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 * {
@@ -91,8 +138,12 @@ body {
 }
 
 ::selection {
-  background: rgba(10, 102, 255, 0.18);
+  background: rgba(79, 70, 229, 0.18);
   color: var(--brand-navy);
+}
+
+.dark ::selection {
+  background: rgba(79, 70, 229, 0.4);
 }
 
 /* Scrollbar Styling */
@@ -108,6 +159,7 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--gray-300);
   border-radius: var(--radius-full);
+  transition: background-color 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -327,40 +379,103 @@ body {
   animation: shake 0.5s ease-in-out;
 }
 
-/* Skeleton Loading */
+/* ✨ Premium Skeleton Loading */
 .skeleton {
-  background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+  background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
   background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s infinite;
+  animation: skeleton-shimmer 1.8s infinite ease-in-out;
   border-radius: var(--radius-md);
 }
 
-/* Glass Effect */
+/* 🪟 Premium Glass Effects */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.dark .glass {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
 .glass-dark {
-  background: rgba(15, 23, 42, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-/* Card Hover Effects */
+.dark .glass-dark {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* 💎 Premium Card Hover Effects */
 .card-hover {
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  transition: transform var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
 }
 
-/* Button Ripple Effect */
+.card-hover-lift {
+  transition: transform var(--transition-spring), box-shadow var(--transition-spring);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: var(--shadow-2xl);
+}
+
+/* 🌟 Premium Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-purple) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-accent {
+  background: linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ✨ Premium Focus Rings */
+.focus-ring {
+  transition: box-shadow var(--transition-fast), outline var(--transition-fast);
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+}
+
+/* 📱 Premium Pattern Backgrounds */
+.pattern-grid {
+  background-image: radial-gradient(circle, rgba(79, 70, 229, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.pattern-dots {
+  background-image: radial-gradient(circle, rgba(79, 70, 229, 0.08) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* 🎨 Premium Button Ripple */
 .btn-ripple {
   position: relative;
   overflow: hidden;
@@ -373,45 +488,16 @@ body {
   left: 50%;
   width: 0;
   height: 0;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition: width 0.7s, height 0.7s;
 }
 
 .btn-ripple:active::after {
-  width: 300px;
-  height: 300px;
+  width: 400px;
+  height: 400px;
   opacity: 0;
-}
-
-/* Focus Styles */
-.focus-ring {
-  transition: box-shadow var(--transition-fast);
-}
-
-.focus-ring:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(10, 102, 255, 0.3);
-}
-
-/* Gradient Text */
-.gradient-text {
-  background: linear-gradient(135deg, var(--brand-blue) 0%, var(--brand-purple) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Subtle Pattern Background */
-.pattern-grid {
-  background-image: radial-gradient(circle, var(--gray-200) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.pattern-dots {
-  background-image: radial-gradient(circle, var(--gray-300) 1px, transparent 1px);
-  background-size: 16px 16px;
 }
 
 /* Status Dot */
@@ -427,7 +513,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--brand-green);
+  background: var(--brand-accent);
   border: 2px solid white;
 }
 
@@ -452,7 +538,7 @@ body {
   transform: translateX(-50%) translateY(-4px);
   padding: 4px 8px;
   background: var(--brand-navy);
-  color: white;
+  color: var(--brand-surface);
   font-size: 12px;
   border-radius: var(--radius-sm);
   white-space: nowrap;
@@ -506,51 +592,215 @@ body {
 .stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
 .stagger-children > *:nth-child(10) { animation-delay: 0.5s; }
 
-/* ─── Dark Mode ─── */
-.dark {
-  color-scheme: dark;
-  --brand-blue: #3B82F6;
-  --brand-blue-light: #60A5FA;
-  --brand-blue-dark: #2563EB;
-  --brand-green: #22C55E;
-  --brand-green-light: #4ADE80;
-  --brand-green-dark: #16A34A;
-  --brand-navy: #F8FAFC;
-  --brand-navy-light: #E2E8F0;
-  --brand-bg: #0F172A;
-  --brand-surface: #1E293B;
-  --brand-border: #334155;
-  --brand-border-light: #1E293B;
-  --brand-muted: #94A3B8;
-  --brand-muted-light: #64748B;
-  --gray-50: #0F172A;
-  --gray-100: #1E293B;
-  --gray-200: #334155;
-  --gray-300: #475569;
-  --gray-400: #64748B;
-  --gray-500: #94A3B8;
-  --gray-600: #CBD5E1;
-  --gray-700: #E2E8F0;
-  --gray-800: #F1F5F9;
-  --gray-900: #F8FAFC;
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+/* ─────────────────────────────────────────
+   TYPOGRAPHY SCALE  (Task #3)
+   Use these classes instead of raw Tailwind
+   so the whole app stays consistent.
+───────────────────────────────────────── */
+
+/* Page title  — h1 equivalent */
+.text-page-title {
+  font-size: 1.375rem;   /* 22px */
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--brand-navy);
 }
 
-.dark .glass {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255, 255, 255, 0.08);
+/* Section heading — h2 equivalent */
+.text-section-title {
+  font-size: 1.0625rem;  /* 17px */
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--brand-navy);
 }
 
-.dark .glass-dark {
-  background: rgba(15, 23, 42, 0.9);
-  border-color: rgba(255, 255, 255, 0.06);
+/* Card / widget title */
+.text-card-title {
+  font-size: 0.9375rem;  /* 15px */
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--brand-navy);
 }
 
-.dark .skeleton {
-  background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
-  background-size: 200% 100%;
+/* Body — default prose */
+.text-body {
+  font-size: 0.875rem;   /* 14px */
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--brand-muted);
+}
+
+/* Label — form fields, table headers */
+.text-label {
+  font-size: 0.75rem;    /* 12px */
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--brand-muted);
+}
+
+/* Overline — tiny ALL-CAPS category label */
+.text-overline {
+  font-size: 0.6875rem;  /* 11px */
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-muted-light);
+}
+
+/* Stat number — large metric display */
+.text-stat {
+  font-size: 1.75rem;    /* 28px */
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--brand-navy);
+}
+
+/* ─────────────────────────────────────────
+   SURFACE / TEXT UTILITIES  (Task #2)
+   Use these instead of dark-mode ternaries.
+   They automatically swap in .dark via CSS vars.
+───────────────────────────────────────── */
+
+.surface          { background-color: var(--brand-surface); }
+.surface-raised   { background-color: var(--brand-bg); }
+.surface-border   { border-color: var(--brand-border); }
+.text-primary     { color: var(--brand-navy); }
+.text-secondary   { color: var(--brand-muted); }
+.text-tertiary    { color: var(--brand-muted-light); }
+
+/* ─────────────────────────────────────────
+   PAGE TRANSITION  (Task #7)
+   Apply .page-enter to the <main> element.
+───────────────────────────────────────── */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 220ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ─────────────────────────────────────────
+   TABLE DENSITY  (Task #4)
+   .table-dense overrides py-4 rows to py-2.5
+───────────────────────────────────────── */
+
+.table-dense tbody td,
+.table-dense thead th {
+  padding-top: 0.625rem !important;    /* py-2.5 */
+  padding-bottom: 0.625rem !important;
+}
+
+/* ─────────────────────────────────────────
+   EMPTY STATE  (Task #5)
+   Consistent empty-state block styling.
+───────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.empty-state-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--brand-border-light);
+  color: var(--brand-muted-light);
+  margin-bottom: 0.25rem;
+}
+
+.dark .empty-state-icon {
+  background-color: var(--brand-border);
+}
+
+.empty-state-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--brand-navy);
+}
+
+.empty-state-desc {
+  font-size: 0.8125rem;
+  color: var(--brand-muted);
+  max-width: 28rem;
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────
+   HERO STAT CARD  (Task #8)
+   .stat-card-hero — first/primary card emphasis
+───────────────────────────────────────── */
+
+.stat-card-hero {
+  background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  border-color: transparent !important;
+  color: white;
+}
+
+.stat-card-hero .text-stat,
+.stat-card-hero p {
+  color: white !important;
+}
+
+.stat-card-hero .text-label,
+.stat-card-hero .text-overline {
+  color: rgba(255,255,255,0.75) !important;
+}
+
+/* ─────────────────────────────────────────
+   FORM FIELD VALIDATION  (Task #9)
+───────────────────────────────────────── */
+
+.field-error input,
+.field-error select,
+.field-error textarea {
+  border-color: var(--brand-red) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+.field-error-msg {
+  font-size: 0.75rem;
+  color: var(--brand-red);
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* ─────────────────────────────────────────
+   MOBILE UTILITIES  (Task #10)
+───────────────────────────────────────── */
+
+/* Prevent stat numbers overflowing on xs screens */
+@media (max-width: 380px) {
+  .text-stat { font-size: 1.375rem; }
+}
+
+/* Stack header actions on very small screens */
+@media (max-width: 480px) {
+  .header-actions {
+    gap: 0.5rem;
+  }
+  .header-actions .btn-label {
+    display: none;
+  }
 }

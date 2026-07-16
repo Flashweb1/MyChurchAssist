@@ -3,10 +3,38 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { sendEmail } from "@/lib/email";
 import { sendSms } from "@/lib/sms";
 import { sendWhatsApp } from "@/lib/whatsapp";
+import { logAudit } from "@/lib/audit";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const sendMessageSchema = z.object({
+  messageId: z.string().min(1, "Message ID is required"),
+  churchId: z.string().min(1, "Church ID is required"),
+  channels: z.array(z.enum(["email", "sms", "whatsapp"])).min(1, "At least one channel is required"),
+});
 
 export async function POST(req: Request) {
   try {
-    const { messageId, churchId, channels } = await req.json();
+    // Rate limit: 5 mass sends per church per hour
+    const rl = rateLimit(getRateLimitKey(req, "msg-send"), { limit: 5, windowSec: 3600 });
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Too many send requests. Please wait ${rl.retryAfter}s.` },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
+      );
+    }
+
+    const body = await req.json();
+    const validation = sendMessageSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+    
+    const { messageId, churchId, channels } = validation.data;
     const db = getAdminDb();
 
     // Get message
@@ -122,6 +150,18 @@ export async function POST(req: Request) {
       status: "Sent",
       sentAt: new Date(),
     });
+
+    // Log audit entry
+    await logAudit(
+      churchId,
+      "system",
+      "system",
+      "message.sent",
+      "message",
+      messageId,
+      `Sent message "${message.title}" to ${sentCount} recipients via ${channels.join(", ")}`,
+      { newValue: { sentCount, failedCount, channels } }
+    );
 
     return NextResponse.json({
       success: true,

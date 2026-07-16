@@ -1,0 +1,10 @@
+{
+  "firestore": {
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "site": "church-assist-db36f",
+    "public": "public",
+    "ignore": ["firebase.json", "**/node_modules/**"]
+  }
+}

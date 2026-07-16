@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Send, Sparkles, User, Bot, Copy, Check, ChevronRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { apiPost } from "@/lib/api-client";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -37,18 +38,14 @@ export default function AIAssistantPage() {
   }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || !user) return;
     const userMessage = text.trim();
     setPrompt("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setLoading(true);
 
     try {
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userMessage, messages: messages }),
-      });
+      const response = await apiPost("/api/ai", { prompt: userMessage, messages });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to generate response");
       setMessages((prev) => [...prev, { role: "assistant", content: data.result }]);

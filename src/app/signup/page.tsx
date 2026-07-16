@@ -69,9 +69,13 @@ export default function SignupPage() {
     try {
       const credential = await signup(email, password);
       if (credential.user && name) {
-        const { updateProfile } = await import("firebase/auth");
+        const { updateProfile, sendEmailVerification } = await import("firebase/auth");
         await updateProfile(credential.user, { displayName: name }).catch((err) => {
           console.error("Failed to update profile name:", err);
+        });
+        // Send verification email (non-blocking — don't block the onboarding flow)
+        sendEmailVerification(credential.user).catch((err) => {
+          console.error("Failed to send verification email:", err);
         });
       }
     } catch (err: unknown) {
@@ -271,7 +275,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[var(--brand-blue)] hover:bg-[#0955db] text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-[var(--brand-blue)]/20"
+              className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-[var(--brand-primary)]/20"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Creating Account..." : "Create Account"}

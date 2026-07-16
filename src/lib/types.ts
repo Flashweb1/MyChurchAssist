@@ -9,7 +9,10 @@ export interface Member {
   status: "Active" | "Inactive";
   dateOfBirth?: string;
   preferredChannel?: "email" | "sms" | "whatsapp";
+  joinedAt?: string;
+  tags?: string[];
   createdAt: Date;
+  deletedAt?: Date | null;
 }
 
 export interface Newcomer {
@@ -26,6 +29,7 @@ export interface Newcomer {
   notes: string;
   status: "New" | "Followed Up" | "Member" | "Lost Contact";
   createdAt: Date;
+  deletedAt?: Date | null;
 }
 
 export type AttendanceMode = "headcount" | "checkin" | "qrcode";
@@ -69,6 +73,7 @@ export interface Department {
   memberCount: number;
   status: "Active" | "Inactive";
   createdAt: Date;
+  deletedAt?: Date | null;
 }
 
 export interface Message {
@@ -104,6 +109,7 @@ export interface Transaction {
   recordedBy: string;
   notes: string;
   createdAt: Date;
+  deletedAt?: Date | null;
 }
 
 export interface ChurchSettings {

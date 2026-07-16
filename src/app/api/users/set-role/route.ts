@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { initAdmin } from "@/lib/firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
+import { z } from "zod";
+import { logAudit } from "@/lib/audit";
+
+const setRoleSchema = z.object({
+  uid: z.string().min(1, "User ID is required"),
+  role: z.enum(["super_admin", "admin", "editor", "finance", "viewer"]),
+});
 
 export async function POST(request: Request) {
   initAdmin();
@@ -13,15 +20,19 @@ export async function POST(request: Request) {
     if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const requester = await auth.verifyIdToken(token);
-    
-    // Parse body safely
-    const body = await request.json();
-    const { uid, role } = body;
 
-    const validRoles = ["super_admin", "admin", "editor", "finance", "viewer"];
-    if (!validRoles.includes(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    // Parse and validate body
+    const body = await request.json();
+    const validation = setRoleSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error.issues[0].message },
+        { status: 400 }
+      );
     }
+    
+    const { uid, role } = validation.data;
 
     // Fetch target user profile
     const targetSnap = await db.collection("users").doc(uid).get();
@@ -29,17 +40,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Target user profile not found" }, { status: 404 });
     }
     const targetData = targetSnap.data();
-
     const isSelf = requester.uid === uid;
+
     if (isSelf) {
-      // For self updates (e.g. during onboarding), the role must match the database profile.
-      // Since they cannot update their own role in the database directly after setup (checked via firestore rules),
-      // they can only set claims that match their pre-established database role.
       if (targetData?.role !== role) {
         return NextResponse.json({ error: "Unauthorized self role escalation" }, { status: 403 });
       }
     } else {
-      // For other users, only super_admin can set roles, and both must belong to the same church.
       const requesterSnap = await db.collection("users").doc(requester.uid).get();
       if (!requesterSnap.exists) {
         return NextResponse.json({ error: "Requester profile not found" }, { status: 403 });
@@ -56,6 +63,18 @@ export async function POST(request: Request) {
     // Apply the claims
     await auth.setCustomUserClaims(uid, { role });
     await db.collection("users").doc(uid).update({ role });
+
+    // Log the audit entry
+    await logAudit(
+      targetData?.churchId || requester.uid,
+      requester.uid,
+      requester.email || "unknown",
+      "user.role_changed",
+      "user",
+      uid,
+      `Changed role for user ${targetData?.email || uid} from ${targetData?.role} to ${role}`,
+      { newValue: { role } }
+    );
 
     return NextResponse.json({ success: true });
   } catch (error) {
