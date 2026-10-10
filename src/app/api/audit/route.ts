@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { initAdmin, getAuth } from "@/lib/firebase-admin";
-import { getAuditLogs } from "@/lib/audit";
+import { getAuditLogs, type AuditAction } from "@/lib/audit";
 
 export async function GET(req: Request) {
   try {
@@ -22,9 +22,10 @@ export async function GET(req: Request) {
 
     const churchId = decodedToken.uid;
     const { searchParams } = new URL(req.url);
+    const actionParam = searchParams.get("action");
 
     const result = await getAuditLogs(churchId, {
-      action: searchParams.get("action") as any,
+      action: actionParam ? (actionParam as AuditAction) : undefined,
       resourceType: searchParams.get("type") || undefined,
       userId: searchParams.get("userId") || undefined,
       limit: parseInt(searchParams.get("limit") || "50"),

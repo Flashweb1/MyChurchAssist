@@ -60,14 +60,14 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <h1 className="fade-in-up text-4xl sm:text-5xl lg:text-[3.8rem] xl:text-[4.2rem] font-extrabold tracking-tight text-slate-900 leading-[1.1] max-w-2xl" style={{ animationDelay: "0.1s" }}>
+              <h1 className={`fade-in-up text-4xl sm:text-5xl lg:text-[3.8rem] xl:text-[4.2rem] font-extrabold tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'} leading-[1.1] max-w-2xl`} style={{ animationDelay: "0.1s" }}>
                 Modern, AI-powered system for <br className="hidden sm:inline" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--brand-blue)] to-[#0DBA8B] animate-text-gradient bg-[length:200%_auto]">
                   growth & care
                 </span>
               </h1>
 
-              <p className="fade-in-up text-lg text-slate-600 leading-relaxed max-w-xl" style={{ animationDelay: "0.15s" }}>
+              <p className={`fade-in-up text-lg ${darkMode ? 'text-slate-300' : 'text-slate-600'} leading-relaxed max-w-xl`} style={{ animationDelay: "0.15s" }}>
                 Replace manual spreadsheets and tedious operations. Let AI track newcomer integrations, automate messaging, forecast giving trends, and run check-ins seamlessly.
               </p>
 
@@ -75,21 +75,21 @@ export default function LandingPage() {
               <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-4 pt-2 fade-in-up" style={{ animationDelay: "0.2s" }}>
                 <Link
                   href="/login?demo=true"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-blue-dark)] px-8 py-4 text-base font-bold text-white shadow-[0_8px_25px_rgba(10,102,255,0.25)] hover:shadow-[0_12px_35px_rgba(10,102,255,0.35)] hover:-translate-y-0.5 transition-all duration-300 btn-ripple"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-dark)] active:scale-[0.98] px-8 py-4 text-base font-bold text-white shadow-lg shadow-[var(--brand-blue)]/30 hover:shadow-[var(--brand-blue-dark)]/40 transition-all duration-200 btn-ripple"
                 >
                   Try demo free
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   href="/features"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/60 backdrop-blur-md px-8 py-4 text-base font-semibold text-slate-700 hover:border-[var(--brand-blue)] hover:text-[var(--brand-blue)] hover:bg-white transition-all duration-300"
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl border bg-white/60 backdrop-blur-md px-8 py-4 text-base font-semibold transition-all duration-300 active:scale-[0.98] ${darkMode ? 'border-slate-700 text-slate-200 hover:border-[var(--brand-blue)] hover:bg-white/10 hover:text-[var(--brand-blue-light)]' : 'border-slate-200 text-slate-700 hover:border-[var(--brand-blue)] hover:bg-white hover:text-[var(--brand-blue)]'}`}
                 >
                   Explore features
                 </Link>
               </div>
 
               {/* Avatar Social Proof */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 pt-6 border-t border-slate-200/60 w-full fade-in-up" style={{ animationDelay: "0.25s" }}>
+              <div className={`flex flex-col sm:flex-row sm:items-center gap-4 pt-6 border-t w-full fade-in-up ${darkMode ? 'border-slate-800' : 'border-slate-200/60'}`} style={{ animationDelay: "0.25s" }}>
                 <div className="flex -space-x-3">
                   {[
                     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
@@ -109,14 +109,14 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <div className="text-xs">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                  <div className={`flex items-center gap-1.5 font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                     Join 1,200+ ministries
                   </div>
-                  <div className="text-slate-500">actively automating workloads with Church Assist</div>
+                  <div className={`${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>actively automating workloads with Church Assist</div>
                 </div>
               </div>
 
@@ -237,12 +237,12 @@ export default function LandingPage() {
         </section>
 
         {/* Metrics Strip */}
-        <section className="bg-slate-50 border-y border-slate-200/70 py-10 px-4">
+        <section className={`border-y py-10 px-4 ${darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200/70'}`}>
           <div className="max-w-4xl mx-auto grid grid-cols-3 gap-6 text-center">
             {metrics.map((metric) => (
               <div key={metric.label} className="flex flex-col items-center">
-                <p className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{metric.value}</p>
-                <p className="mt-1.5 text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-widest text-center">{metric.label}</p>
+                <p className={`text-3xl sm:text-4xl font-extrabold ${darkMode ? 'text-white' : 'text-slate-900'} tracking-tight`}>{metric.value}</p>
+                <p className={`mt-1.5 text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-center ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{metric.label}</p>
               </div>
             ))}
           </div>
@@ -253,29 +253,29 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto">
             <div className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] items-center">
               <div className="space-y-6">
-                <p className="text-xs uppercase tracking-[0.28em] text-slate-500 font-bold">Trusted Ministry Tools</p>
-                <h2 className="text-4xl font-bold tracking-tight text-slate-900 leading-tight">
+                <p className={`text-xs uppercase tracking-[0.28em] font-bold ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Trusted Ministry Tools</p>
+                <h2 className={`text-4xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-slate-900'} leading-tight`}>
                   A modern system designed to help churches automate workflows and care for members.
                 </h2>
-                <p className="text-lg text-slate-600 leading-relaxed">
+                <p className={`text-lg ${darkMode ? 'text-slate-300' : 'text-slate-600'} leading-relaxed`}>
                   From automated follow-ups and smart giving records to instant checks and AI assistance, Church Assist centralizes your most important operations in one premium system.
                 </p>
 
                 <div className="grid gap-4 sm:grid-cols-3 pt-4">
                   {quickFeatures.map((feature) => (
-                    <div key={feature.title} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <div key={feature.title} className={`rounded-3xl border p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${darkMode ? 'border-slate-800 bg-slate-900/70 hover:shadow-slate-900/50' : 'border-slate-200 bg-white'}`}>
                       <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand-blue)]/10 text-[var(--brand-blue)]">
                         <feature.icon className="h-6 w-6" />
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 mb-2">{feature.title}</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed">{feature.description}</p>
+                      <h3 className={`text-base font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{feature.title}</h3>
+                      <p className={`text-xs leading-relaxed ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{feature.description}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Snapshot Dashboard Mockup */}
-              <div className="rounded-[2.5rem] border border-slate-200 bg-white/95 p-8 shadow-xl overflow-hidden">
+              <div className={`rounded-[2.5rem] border p-8 shadow-xl overflow-hidden ${darkMode ? 'border-slate-800 bg-slate-900/70' : 'border-slate-200 bg-white/95'}`}>
                 <div className="relative">
                   <div className="rounded-[2rem] bg-slate-950 p-8 text-white shadow-2xl">
                     <div className="mb-6 flex items-center justify-between">
@@ -353,36 +353,36 @@ export default function LandingPage() {
               <ShieldCheck className="w-4 h-4" />
               Automated operations you can trust
             </div>
-            <h2 className="text-4xl font-bold text-slate-900 mb-4">Reclaim hours of admin work every week</h2>
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed mb-10">
+            <h2 className={`text-4xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Reclaim hours of admin work every week</h2>
+            <p className={`text-lg ${darkMode ? 'text-slate-300' : 'text-slate-600'} max-w-3xl mx-auto leading-relaxed mb-10`}>
               Church Assist coordinates your church administration behind the scenes so your ministry team can focus on what matters most: caring for people.
             </p>
 
             <div className="grid gap-6 md:grid-cols-3">
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className={`rounded-3xl border p-8 shadow-sm hover:shadow-xl transition-all duration-300 ${darkMode ? 'border-slate-800 bg-slate-900/70 hover:shadow-slate-900/50' : 'border-slate-200 bg-white'}`}>
                 <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--brand-blue)]/10 text-[var(--brand-blue)]">
                   <Brain className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">AI Outreach Drafts</h3>
-                <p className="text-slate-500 text-sm">
+                <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>AI Outreach Drafts</h3>
+                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   Let AI construct highly-personalized welcome and prayer team responses based on check-in answers.
                 </p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className={`rounded-3xl border p-8 shadow-sm hover:shadow-xl transition-all duration-300 ${darkMode ? 'border-slate-800 bg-slate-900/70 hover:shadow-slate-900/50' : 'border-slate-200 bg-white'}`}>
                 <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--brand-green)]/10 text-[var(--brand-green)]">
                   <Sparkles className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">Workload Automation</h3>
-                <p className="text-slate-500 text-sm">
+                <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Workload Automation</h3>
+                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   Triggers follow-ups, assigns pastors, generates offering receipts, and compiles attendance sheets automatically.
                 </p>
               </div>
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className={`rounded-3xl border p-8 shadow-sm hover:shadow-xl transition-all duration-300 ${darkMode ? 'border-slate-800 bg-slate-900/70 hover:shadow-slate-900/50' : 'border-slate-200 bg-white'}`}>
                 <div className="mb-5 inline-flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--brand-purple)]/10 text-[var(--brand-purple)]">
                   <Bot className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-3">Predictive Insights</h3>
-                <p className="text-slate-500 text-sm">
+                <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Predictive Insights</h3>
+                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   Predict weekly attendance patterns and seasonal giving fluctuations to coordinate your plans proactively.
                 </p>
               </div>

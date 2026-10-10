@@ -195,7 +195,7 @@ export default function DashboardPage() {
         }
       }
       if (pending > 0) {
-        builtInsights.push({ type: "warning", message: `${pending} follow-up${pending > 1 ? "s" : ""} still pending. Don't let anyone fall through the cracks.`, action: "View Follow-Ups", actionHref: "/follow-up" });
+        builtInsights.push({ type: "warning", message: `${pending} follow-up${pending > 1 ? "s" : ""} still pending. Don&apos;t let anyone fall through the cracks.`, action: "View Follow-Ups", actionHref: "/follow-up" });
       }
       if (builtInsights.length === 0) {
         builtInsights.push({ type: "neutral", message: "Start adding members to unlock AI-powered insights about your church health." });

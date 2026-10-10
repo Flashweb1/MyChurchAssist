@@ -60,7 +60,7 @@ export default function PublicNavbar() {
             </Link>
             <Link
               href="/signup"
-              className="text-sm font-semibold text-white bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-blue-dark)] px-6 py-2.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(10,102,255,0.2)] hover:shadow-[0_8px_25px_rgba(10,102,255,0.35)] hover:-translate-y-0.5"
+              className="text-sm font-semibold text-white bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-dark)] px-6 py-2.5 rounded-xl transition-all shadow-[0_8px_20px_rgba(10,102,255,0.2)] hover:shadow-[0_8px_25px_rgba(10,102,255,0.35)] hover:-translate-y-0.5 active:scale-[0.97]"
             >
               Get Started
             </Link>
@@ -81,7 +81,7 @@ export default function PublicNavbar() {
         className={`fixed inset-x-0 top-20 z-40 overflow-hidden backdrop-blur-xl transition-all duration-300 md:hidden ${open ? "max-h-[calc(100vh-5rem)] opacity-100" : "max-h-0 opacity-0"} ${darkMode ? 'bg-slate-900/95' : 'bg-white/95'}`}
         style={{ boxShadow: "0 30px 60px rgba(15,23,42,0.12)" }}
       >
-        <div className="mx-auto max-w-7xl px-4 px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="space-y-4">
             {navLinks.map((link) => (
               <Link
@@ -104,7 +104,7 @@ export default function PublicNavbar() {
               <Link
                 href="/signup"
                 onClick={() => setOpen(false)}
-                className="block rounded-3xl bg-[var(--brand-blue)] px-5 py-4 text-center text-base font-semibold text-white transition hover:bg-[var(--brand-blue-dark)]"
+                className="block rounded-3xl bg-[var(--brand-blue)] px-5 py-4 text-center text-base font-semibold text-white transition hover:bg-[var(--brand-blue-dark)] active:scale-[0.98]"
               >
                 Get Started
               </Link>

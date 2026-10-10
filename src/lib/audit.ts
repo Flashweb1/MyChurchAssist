@@ -1,4 +1,5 @@
 import { getFirestore } from "firebase-admin/firestore";
+import type { Query, DocumentData } from "firebase-admin/firestore";
 
 export type AuditAction = 
   | "user.login"
@@ -103,7 +104,7 @@ export async function getAuditLogs(
 ) {
   try {
     const db = getFirestore();
-    let query: any = db.collection("audit_logs")
+    let query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> = db.collection("audit_logs")
       .where("churchId", "==", churchId)
       .orderBy("timestamp", "desc");
 
@@ -122,18 +123,18 @@ export async function getAuditLogs(
 
     const snapshot = await query.get();
     
-    let logs = snapshot.docs.map((doc: any) => ({
+    let logs = snapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
       timestamp: doc.data().timestamp?.toDate?.() || doc.data().timestamp,
-    }));
+    })) as Array<AuditLogEntry & { id: string }>;
 
     // Filter by date range in memory (Firestore doesn't support complex date ranges well)
     if (options?.startDate) {
-      logs = logs.filter((log: any) => log.timestamp >= options.startDate!);
+      logs = logs.filter((log) => log.timestamp >= options.startDate!);
     }
     if (options?.endDate) {
-      logs = logs.filter((log: any) => log.timestamp <= options.endDate!);
+      logs = logs.filter((log) => log.timestamp <= options.endDate!);
     }
 
     return { success: true, logs };

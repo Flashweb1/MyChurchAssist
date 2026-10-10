@@ -35,8 +35,8 @@ function validateMember(m: MemberInput, row: number): string | null {
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { churchId, members } = body as { churchId: string; members: MemberInput[] };
+    const body = await req.json() as { churchId: string; members: MemberInput[] };
+    const { churchId, members } = body;
 
     if (!churchId)
       return NextResponse.json({ error: "Missing churchId" }, { status: 400 });
@@ -91,8 +91,9 @@ export async function POST(req: Request) {
     result.skipped = result.errors.length;
 
     return NextResponse.json(result);
-  } catch (err: any) {
-    console.error("Import error:", err);
-    return NextResponse.json({ error: err.message || "Import failed" }, { status: 500 });
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    console.error("Import error:", error);
+    return NextResponse.json({ error: error.message || "Import failed" }, { status: 500 });
   }
 }

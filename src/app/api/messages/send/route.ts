@@ -89,13 +89,13 @@ export async function POST(req: Request) {
     }
 
     // Process deliveries
-    const deliveries: { member: any; channel: string; success: boolean; error?: string }[] = [];
+    const deliveries: { member: Record<string, unknown>; channel: string; success: boolean; error?: string }[] = [];
     let sentCount = 0;
     let failedCount = 0;
 
     let actualCost = 0;
 
-    for (const member of members as any[]) {
+    for (const member of members as Record<string, unknown>[]) {
       for (const channel of channels) {
         const result = await sendViaChannel(channel, member, message);
         deliveries.push({ member, channel, ...result });
@@ -170,18 +170,23 @@ export async function POST(req: Request) {
       totalCost: actualCost,
     });
   } catch (error) {
-    console.error("Message send error:", error);
+    const err = error instanceof Error ? error : new Error(String(error));
+    console.error("Message send error:", err);
     return NextResponse.json({ error: "Failed to send message" }, { status: 500 });
   }
 }
 
-async function sendViaChannel(channel: string, member: any, message: any) {
+async function sendViaChannel(
+  channel: string,
+  member: Record<string, unknown>,
+  message: Record<string, unknown>
+): Promise<{ success: boolean; error?: string }> {
   switch (channel) {
     case "email": {
       if (!member.email) return { success: false, error: "No email" };
       const result = await sendEmail({
-        to: member.email,
-        subject: message.title,
+        to: member.email as string,
+        subject: message.title as string,
         html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
           <h2>${message.title}</h2>
           <p>${message.content}</p>
@@ -193,11 +198,11 @@ async function sendViaChannel(channel: string, member: any, message: any) {
     }
     case "sms": {
       if (!member.phone) return { success: false, error: "No phone" };
-      return await sendSms({ to: member.phone, message: message.content });
+      return await sendSms({ to: member.phone as string, message: message.content as string });
     }
     case "whatsapp": {
       if (!member.phone) return { success: false, error: "No phone" };
-      return await sendWhatsApp({ to: member.phone, message: message.content });
+      return await sendWhatsApp({ to: member.phone as string, message: message.content as string });
     }
     default:
       return { success: false, error: `Unknown channel: ${channel}` };

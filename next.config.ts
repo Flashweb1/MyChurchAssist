@@ -30,19 +30,23 @@ const nextConfig: NextConfig = {
 // Only wrap with Sentry when DSN is configured (avoids compile overhead in dev)
 const hasSentryDsn = !!process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-if (hasSentryDsn) {
-  const { withSentryConfig } = require("@sentry/nextjs");
-  const sentryConfig = {
-    org: process.env.SENTRY_ORG,
-    project: "church-assist",
-    widenClientFileUpload: true,
-    hideSourceMaps: true,
-    silent: true,
-    // Suppress warnings about missing files when DSN is not set
-    disableServerWebpackPlugin: false,
-    disableClientWebpackPlugin: false,
-  };
-  module.exports = withSentryConfig(nextConfig, sentryConfig);
-} else {
-  module.exports = nextConfig;
+async function getConfig() {
+  if (hasSentryDsn) {
+    const sentryModule = await import("@sentry/nextjs");
+    const { withSentryConfig } = sentryModule;
+    const sentryConfig = {
+      org: process.env.SENTRY_ORG,
+      project: "church-assist",
+      widenClientFileUpload: true,
+      hideSourceMaps: true,
+      silent: true,
+      // Suppress warnings about missing files when DSN is not set
+      disableServerWebpackPlugin: false,
+      disableClientWebpackPlugin: false,
+    };
+    return withSentryConfig(nextConfig, sentryConfig);
+  }
+  return nextConfig;
 }
+
+export default getConfig();

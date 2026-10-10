@@ -51,7 +51,7 @@ export default function AttendanceChart({ data }: AttendanceChartProps) {
     return Math.round(((last - first) / first) * 100);
   }, [chartData]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
     if (!active || !payload?.length) return null;
     const value = payload[0].value;
     const idx = chartData.findIndex((d) => d.name === label);

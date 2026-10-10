@@ -91,7 +91,7 @@ export default function PublicFooter() {
               <h2 className="text-3xl sm:text-4xl font-bold text-white">Get started with Church Assist today.</h2>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/signup" className="rounded-3xl bg-[var(--brand-blue)] px-7 py-3 text-sm font-semibold text-white shadow-[0_15px_40px_rgba(10,102,255,0.25)] transition hover:opacity-95">
+              <Link href="/signup" className="rounded-3xl bg-[var(--brand-blue)] hover:bg-[var(--brand-blue-dark)] px-7 py-3 text-sm font-semibold text-white shadow-[0_15px_40px_rgba(10,102,255,0.25)] transition active:scale-[0.97]">
                 Start free trial
               </Link>
               <Link href="/contact" className="rounded-3xl border border-slate-700 px-7 py-3 text-sm font-semibold text-white/90 transition hover:bg-white/5">

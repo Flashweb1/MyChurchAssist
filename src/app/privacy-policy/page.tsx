@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
         <div className="mx-auto max-w-5xl">
           <div className="rounded-[2rem] border border-slate-200 bg-white p-10 shadow-xl">
             <p className="text-sm uppercase tracking-[0.28em] text-slate-500 mb-4">Privacy Policy</p>
-            <h1 className="text-4xl font-bold text-slate-900 mb-6">How Church Assist protects your church's data</h1>
+            <h1 className="text-4xl font-bold text-slate-900 mb-6">How Church Assist protects your church&apos;s data</h1>
             <p className="text-lg leading-relaxed text-slate-600 mb-8">
               Your trust matters. We build our platform to keep member data safe, private, and accessible only to your authorized ministry team.
             </p>

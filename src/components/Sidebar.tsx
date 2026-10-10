@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, UserPlus, CalendarCheck, ClipboardList,
   Building2, MessageSquare, Wallet, BarChart3, Settings, Sparkles,
-  X, ChevronLeft, ChevronRight, BookOpen, DollarSign, Church,
+  X, ChevronLeft, ChevronRight, BookOpen, DollarSign,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -149,14 +150,12 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen?: boolean; setIs
         <div className="relative overflow-hidden px-4 py-5 border-b border-slate-800/60 shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/15 via-purple-600/8 to-transparent" />
           <div className="relative flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-indigo-500/25 shrink-0">
-              <Church className="w-5 h-5 text-white" />
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate">Church Assist</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">Ministry Platform</p>
+            {collapsed ? (
+              <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0">
+                <Image src="/logo-church-assist.png" alt="Church Assist" width={36} height={36} className="w-full h-full object-contain" />
               </div>
+            ) : (
+              <Image src="/logo-church-assist.png" alt="Church Assist" width={2000} height={581} className="h-9 w-auto shrink-0" />
             )}
             <button
               className="hidden lg:flex ml-auto p-1.5 rounded-lg hover:bg-white/10 text-slate-500 hover:text-white transition-all"
